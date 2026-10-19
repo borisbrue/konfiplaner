@@ -14,11 +14,12 @@ from konfiplaner.excel_import import ImportDateiFehler
 from konfiplaner.gui.daten import DatenSeite
 from konfiplaner.gui.dialoge import Dialoge
 from konfiplaner.gui.ergebnis import ErgebnisSeite
+from konfiplaner.gui.konferenzen import KonferenzenSeite
 from konfiplaner.gui.planen import PlanenSeite
 from konfiplaner.gui.regeln import RegelnSeite
 from konfiplaner.modell import Plan
 
-SEITE_DATEN, SEITE_REGELN, SEITE_PLANEN, SEITE_ERGEBNIS = range(4)
+SEITE_DATEN, SEITE_KONFERENZEN, SEITE_REGELN, SEITE_PLANEN, SEITE_ERGEBNIS = range(5)
 
 
 class Hauptfenster(QMainWindow):
@@ -31,22 +32,25 @@ class Hauptfenster(QMainWindow):
         self.resize(1100, 760)
 
         self.daten = DatenSeite(sitzung)
+        self.konferenzen = KonferenzenSeite(sitzung)
         self.regeln = RegelnSeite(sitzung, self.dialoge)
         self.planen = PlanenSeite(sitzung)
         self.ergebnis = ErgebnisSeite(sitzung)
         self.reiter = QTabWidget()
         self.reiter.addTab(self.daten, "1  Daten")
-        self.reiter.addTab(self.regeln, "2  Regeln")
-        self.reiter.addTab(self.planen, "3  Planen")
-        self.reiter.addTab(self.ergebnis, "4  Ergebnis")
+        self.reiter.addTab(self.konferenzen, "2  Konferenzen")
+        self.reiter.addTab(self.regeln, "3  Regeln")
+        self.reiter.addTab(self.planen, "4  Planen")
+        self.reiter.addTab(self.ergebnis, "5  Ergebnis")
         self.setCentralWidget(self.reiter)
 
         self._menue()
         self.daten.oeffnen.clicked.connect(self.datei_oeffnen)
         self.daten.neu_laden.clicked.connect(self.neu_laden)
         self.daten.daten_geaendert.connect(self._daten_geaendert)
-        for seite in (self.daten, self.regeln, self.planen):
+        for seite in (self.daten, self.konferenzen, self.regeln, self.planen):
             seite.hinweis.connect(self.statusBar().showMessage)
+        self.konferenzen.auswahl_geaendert.connect(self._auswahl_geaendert)
         self.planen.plan_fertig.connect(self._plan_fertig)
         self.planen.laeuft_geaendert.connect(self._laeuft_geaendert)
         self.ergebnis.export_gewuenscht.connect(self.exportieren)
@@ -71,6 +75,7 @@ class Hauptfenster(QMainWindow):
     def _aktualisiere_zustand(self) -> None:
         geladen = self.sitzung.ergebnis is not None
         laeuft = self.planen.laeuft
+        self.reiter.setTabEnabled(SEITE_KONFERENZEN, geladen and not laeuft)
         self.reiter.setTabEnabled(SEITE_REGELN, geladen and not laeuft)
         self.reiter.setTabEnabled(SEITE_PLANEN, geladen)
         self.reiter.setTabEnabled(SEITE_ERGEBNIS, self.sitzung.plan is not None)
@@ -80,6 +85,11 @@ class Hauptfenster(QMainWindow):
         self.planen.aktualisieren()
 
     def _daten_geaendert(self) -> None:
+        self.konferenzen.aktualisieren()
+        self.ergebnis.aktualisieren()
+        self._aktualisiere_zustand()
+
+    def _auswahl_geaendert(self) -> None:
         self.ergebnis.aktualisieren()
         self._aktualisiere_zustand()
 
@@ -120,6 +130,7 @@ class Hauptfenster(QMainWindow):
             return
         self._gemeldete_aenderung = None
         self.regeln.aktualisieren()  # das Profil der Datei kann Regeln umstellen
+        self.konferenzen.aktualisieren()
         self.daten.aktualisieren()
         self.ergebnis.aktualisieren()
         self._aktualisiere_zustand()
@@ -135,6 +146,9 @@ class Hauptfenster(QMainWindow):
                 self.statusBar().showMessage(
                     f"{len(erg.fehler)} Fehler in der Datei – bitte korrigieren und neu laden"
                 )
+        elif self.sitzung.planbar and erg.lehrerliste:
+            self.reiter.setCurrentIndex(SEITE_KONFERENZEN)  # hier wird die Auswahl getroffen (SPEC-0009)
+            self.statusBar().showMessage(f"{pfad.name} geladen – Konferenzen auswählen oder direkt planen")
         elif self.sitzung.planbar:
             self.reiter.setCurrentIndex(SEITE_PLANEN)
             self.statusBar().showMessage(f"{pfad.name} geladen – bereit zum Planen")

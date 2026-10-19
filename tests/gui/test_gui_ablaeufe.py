@@ -9,7 +9,13 @@ from PySide6.QtCore import Qt
 
 from konfiplaner.anwendung import Sitzung
 from konfiplaner.einstellungen import YamlEinstellungen
-from konfiplaner.gui.hauptfenster import SEITE_DATEN, SEITE_ERGEBNIS, SEITE_PLANEN, Hauptfenster
+from konfiplaner.gui.hauptfenster import (
+    SEITE_DATEN,
+    SEITE_ERGEBNIS,
+    SEITE_KONFERENZEN,
+    SEITE_PLANEN,
+    Hauptfenster,
+)
 from konfiplaner.modell import Plan
 from tests.xlsx_helfer import PERSONEN, SLOTS, schreibe
 
@@ -353,7 +359,7 @@ def test_gui_zuordnung_von_hand_aendern(qtbot, tmp_path):
 def test_gui_lehrerliste_plant_und_exportiert_vorsitz(qtbot, tmp_path):
     f, _ = lehrer_fenster(qtbot, tmp_path, [["Wolf", "Uwe", "", None, None, None, None]])
     f.datei_oeffnen()
-    assert f.reiter.currentIndex() == SEITE_PLANEN and f.planen.planen.isEnabled()
+    assert f.reiter.currentIndex() == SEITE_KONFERENZEN and f.planen.planen.isEnabled()
     plane_und_warte(qtbot, f)
     termine = f.ergebnis.modelle["Termine"].zeilen()
     assert {z[3]: z[4] for z in termine}["Deutsch"] == "Anna Meier"
@@ -393,7 +399,7 @@ def test_gui_zeigt_termine_je_konferenz_und_sperrt_das_zeitraster(qtbot, tmp_pat
     ]
     assert not d.erzeugen.isEnabled() and not d.tage.isEnabled()
     assert "Konferenzen" in d.slot_info.text()
-    assert f.reiter.currentIndex() == SEITE_PLANEN and f.planen.planen.isEnabled()
+    assert f.reiter.currentIndex() == SEITE_KONFERENZEN and f.planen.planen.isEnabled()
 
 
 def test_gui_plant_gleichzeitige_konferenzen_und_zeigt_konflikte(qtbot, tmp_path):

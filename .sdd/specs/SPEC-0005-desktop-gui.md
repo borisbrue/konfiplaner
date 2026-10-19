@@ -58,7 +58,7 @@ Planer:innen sollen ohne Kommandozeile arbeiten: Excel laden, Regeln wählen, pl
 
 ## 4. Funktionale Anforderungen
 
-- **FR-01:** Hauptfenster mit Schritten: Daten laden, Regeln, Planen, Ergebnis, Export.
+- **FR-01:** Hauptfenster mit Schritten: Daten laden, Konferenzen auswählen (SPEC-0009), Regeln, Planen, Ergebnis, Export.
 - **FR-02:** Fehlerliste aus SPEC-0001 wird tabellarisch angezeigt; Klick markiert die Quelle.
 - **FR-03:** Regelverwaltung listet alle registrierten Restriktionen (SPEC-0003) mit Schalter und Gewicht.
 - **FR-04:** Planung läuft in einem Worker-Thread mit Fortschritt, Zeitlimit und Abbrechen.
@@ -129,3 +129,4 @@ Feature: GUI-Ablauf
 | 2026-10-19 | 0.4.0   | Boris Brünen | Daten ergänzen (FR-10), Anwendungsschicht (FR-11) |
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0006 (Vorsitz), Version unverändert |
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0008 (Festtermine, Rangfaktor), Version unverändert |
+| 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0009 (Konferenzauswahl), Version unverändert |

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import time
@@ -16,7 +17,7 @@ from typing import Any
 from konfiplaner.einstellungen import Einstellungsspeicher, KeineEinstellungen
 from konfiplaner.excel_export import exportiere, tabellen
 from konfiplaner.excel_import import Importergebnis, importiere
-from konfiplaner.modell import Modell, ModellFehler, Plan, Thema, Zeitslot
+from konfiplaner.modell import Modell, ModellFehler, Person, Plan, Thema, Zeitslot
 from konfiplaner.normalisierung import VORSCHLAG, Normalisierung
 from konfiplaner.planer import Abbruchsignal, Fortschritt, Planer, PlanerOptionen
 from konfiplaner.restriktionen import (
@@ -37,6 +38,17 @@ THEMENWERTE = ("wichtigkeit", "mindestanzahl", "dauer_min")
 PROFIL_FESTTERMINE = {"schwerpunkte": ("weich", 1.0)}
 STANDARD_ZEITLIMIT_S = 60.0
 STANDARD_ZEITRASTER = {"tage": "Samstag", "beginn": "09:00", "ende": "12:00", "laenge_min": 45}
+
+
+@dataclass(frozen=True)
+class KonferenzAnsicht:
+    """Eine Konferenz für die Auswahl (SPEC-0009)."""
+
+    name: str
+    ausgewaehlt: bool
+    mitglieder: int  # Personen, die die Konferenz in der Datei haben
+    vorsitz: str | None
+    termine: int
 
 
 @dataclass(frozen=True)
@@ -75,6 +87,7 @@ class Sitzung:
         self.letzter_exportordner: Path | None = None
         self._mtime: float | None = None
         self.normalisierung = Normalisierung()
+        self.abgewaehlt: set[str] = set()  # abgewählte Konferenzen (SPEC-0009)
         self._gesetzt: set[str] = set()  # von Hand gesetzte Regeln (verdrängen das Profil)
         self._themenwerte: dict[str, dict[str, int]] = {}
         self._lade_einstellungen()
@@ -97,6 +110,9 @@ class Sitzung:
             self.zeitraster.update(daten["zeitraster"])
         if isinstance(daten.get("letzter_exportordner"), str):
             self.letzter_exportordner = Path(daten["letzter_exportordner"])
+        ab = daten.get("abgewaehlte_konferenzen")
+        if isinstance(ab, list):
+            self.abgewaehlt = {str(n) for n in ab}
         self.normalisierung = Normalisierung.aus_dict(daten.get("normalisierung"))
         werte = daten.get("themenwerte")
         if isinstance(werte, dict):
@@ -128,6 +144,7 @@ class Sitzung:
                 "zeitraster": dict(self.zeitraster),
                 "letzter_exportordner": str(self.letzter_exportordner) if self.letzter_exportordner else None,
                 "normalisierung": self.normalisierung.bestaetigt(),
+                "abgewaehlte_konferenzen": sorted(self.abgewaehlt),
                 "themenwerte": {n: dict(w) for n, w in self._themenwerte.items()},
                 "regeln": {
                     n: {"typ": e.typ, "gewicht": e.gewicht, "parameter": dict(e.parameter)}
@@ -244,6 +261,8 @@ class Sitzung:
             gruende.append(f"{len(self.ergebnis.fehler)} Fehler in der Datei")
         if not self.ergebnis.personen:
             gruende.append("Keine Personen")
+        if self.ergebnis.themen and not self.ausgewaehlte_themen():
+            gruende.append("Keine Konferenz ausgewählt")
         if not self.zeitslots:
             gruende.append("Keine Zeitslots")
         return gruende
@@ -256,8 +275,67 @@ class Sitzung:
         if self.ergebnis is None:
             raise ModellFehler("Keine Datei geladen")
         return self.ergebnis.baue_modell(
-            list(self.themen), list(self.zeitslots), {k: set(v) for k, v in self.verfuegbarkeit.items()}
+            self.ausgewaehlte_themen(),
+            list(self.zeitslots),
+            {k: set(v) for k, v in self.verfuegbarkeit.items()},
+            self.effektive_personen(),
         )
+
+    # ── Konferenzauswahl (SPEC-0009) ────────────────────────────────────────
+    def konferenzen(self) -> list[KonferenzAnsicht]:
+        mitglieder = Counter(t for p in (self.ergebnis.personen if self.ergebnis else []) for t in p.themen)
+        return [
+            KonferenzAnsicht(
+                t.name,
+                t.name not in self.abgewaehlt,
+                mitglieder[t.name],
+                t.vorsitz,
+                len(t.festtermine),
+            )
+            for t in self.themen
+        ]
+
+    def waehle(self, name: str, ausgewaehlt: bool) -> None:
+        if name not in {t.name for t in self.themen}:
+            raise ModellFehler(f"Unbekannte Konferenz {name}")
+        (self.abgewaehlt.discard if ausgewaehlt else self.abgewaehlt.add)(name)
+        self._auswahl_geaendert()
+
+    def waehle_alle(self, ausgewaehlt: bool = True) -> None:
+        self.abgewaehlt = set() if ausgewaehlt else {t.name for t in self.themen}
+        self._auswahl_geaendert()
+
+    def _auswahl_geaendert(self) -> None:
+        self.plan = self.plan_modell = None
+        self.speichere()
+
+    def ausgewaehlte_themen(self) -> list[Thema]:
+        """Themen der ausgewählten Konferenzen; eine abgewählte Hauptkonferenz wird nicht mehr referenziert."""
+        return [
+            dataclasses.replace(t, haupt=None) if t.haupt in self.abgewaehlt else t
+            for t in self.themen
+            if t.name not in self.abgewaehlt
+        ]
+
+    def effektive_personen(self) -> list[Person]:
+        """Personen mit den Konferenzen der Auswahl; die übrigen rücken in der Rangfolge nach."""
+        if self.ergebnis is None:
+            return []
+        return [
+            dataclasses.replace(p, themen=tuple(t for t in p.themen if t not in self.abgewaehlt))
+            for p in self.ergebnis.personen
+        ]
+
+    @property
+    def neu_zuordnen(self) -> list[str]:
+        """Personen, die durch die Auswahl ihre letzte Konferenz verloren haben."""
+        if self.ergebnis is None:
+            return []
+        return [
+            p.name
+            for p, e in zip(self.ergebnis.personen, self.effektive_personen(), strict=True)
+            if p.themen and not e.themen
+        ]
 
     # ── Regeln (FR-03) ──────────────────────────────────────────────────────
     def regeln(self) -> list[RegelAnsicht]:
@@ -316,6 +394,7 @@ class Sitzung:
         )
         if self.ergebnis is not None:
             plan.warnungen += [f"{name} hat keine Konferenz" for name in self.ergebnis.ohne_konferenz]
+            plan.warnungen += [f"{name} hat durch die Auswahl keine Konferenz" for name in self.neu_zuordnen]
         self.plan, self.plan_modell = plan, modell
         return plan
 

@@ -1,0 +1,98 @@
+{
+  "spec_id": "SPEC-0009",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0009-R002",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "FR-03",
+      "conflicting_contract": "SPEC-0006:FR-01",
+      "detail": "SPEC-0006 verlangt als harte Standardregel, dass der Vorsitz an allen Terminen seines Themas teilnimmt; SPEC-0009 FR-03 entfernt Vorsitz und Termine abgewählter Konferenzen, sodass die Regel `vorsitz` für diese nicht geprüft werden und keinen Verstoß melden darf.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Berechtigt und nachgezogen: Auswahl wirkt vor der Modellbildung; SPEC-0002 FR-14 und SPEC-0006 FR-10 halten die Ausnahmen fest, SPEC-0005 FR-01 und SPEC-0007 FR-09 grenzen Schritte und Listen ab.",
+        "resolved_at": "2026-10-19T20:06:01Z"
+      }
+    },
+    {
+      "id": "CF-0009-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-02",
+      "conflicting_contract": "SPEC-0008:FR-05",
+      "detail": "SPEC-0009 FR-02 definiert das Nachrücken der Rangfolge (Fachkonferenz I/II/III) neu, die SPEC-0008 FR-05 bereits für die Konfliktauflösung festlegt; es sollte eine einzige Quelle für die Rangfolge geben.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Berechtigt und nachgezogen: Auswahl wirkt vor der Modellbildung; SPEC-0002 FR-14 und SPEC-0006 FR-10 halten die Ausnahmen fest, SPEC-0005 FR-01 und SPEC-0007 FR-09 grenzen Schritte und Listen ab.",
+        "resolved_at": "2026-10-19T20:06:01Z"
+      }
+    },
+    {
+      "id": "CF-0009-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0007:FR-09",
+      "detail": "Die Liste „Ohne Konferenz“ aus SPEC-0007 FR-09 und die neue Liste „Neu zuordnen“ in SPEC-0009 FR-04/FR-07 zeigen beide Personen ohne Konferenz und müssen klar abgegrenzt sein (Ursache Datei vs. Ursache Auswahl).",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Berechtigt und nachgezogen: Auswahl wirkt vor der Modellbildung; SPEC-0002 FR-14 und SPEC-0006 FR-10 halten die Ausnahmen fest, SPEC-0005 FR-01 und SPEC-0007 FR-09 grenzen Schritte und Listen ab.",
+        "resolved_at": "2026-10-19T20:06:01Z"
+      }
+    },
+    {
+      "id": "CF-0009-R007",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-07",
+      "conflicting_contract": "SPEC-0005:FR-01",
+      "detail": "SPEC-0009 FR-07 fügt der GUI eine neue Seite „Konferenzen“ als zweiten Schritt hinzu und verwirft Pläne bei Änderung (FR-08); das verändert den in SPEC-0005 definierten Ablauf Import → Planung → Export und die Sitzungslogik.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Berechtigt und nachgezogen: Auswahl wirkt vor der Modellbildung; SPEC-0002 FR-14 und SPEC-0006 FR-10 halten die Ausnahmen fest, SPEC-0005 FR-01 und SPEC-0007 FR-09 grenzen Schritte und Listen ab.",
+        "resolved_at": "2026-10-19T20:06:02Z"
+      }
+    },
+    {
+      "id": "CF-0009-R008",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0004:FR-01",
+      "detail": "SPEC-0009 FR-04 führt ein neues Export-Blatt „Hinweise“ ein, während SPEC-0004 und SPEC-0008 bereits Termine, Verstöße und Konflikte im Export abbilden; Zuständigkeit und Inhalt der Blätter müssen abgestimmt werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Berechtigt und nachgezogen: Auswahl wirkt vor der Modellbildung; SPEC-0002 FR-14 und SPEC-0006 FR-10 halten die Ausnahmen fest, SPEC-0005 FR-01 und SPEC-0007 FR-09 grenzen Schritte und Listen ab.",
+        "resolved_at": "2026-10-19T20:06:02Z"
+      }
+    },
+    {
+      "id": "CF-0009-R009",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "FR-03",
+      "conflicting_contract": "SPEC-0002:FR-01",
+      "detail": "SPEC-0002 verlangt, dass jedes Thema in einem fertigen Plan mindestens einmal als Termin vorkommt, aber SPEC-0009 FR-03 gibt abgewählten Konferenzen (Themen) im Modell keine Termine; die Pflicht muss auf ausgewählte Konferenzen beschränkt werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Berechtigt und nachgezogen: Auswahl wirkt vor der Modellbildung; SPEC-0002 FR-14 und SPEC-0006 FR-10 halten die Ausnahmen fest, SPEC-0005 FR-01 und SPEC-0007 FR-09 grenzen Schritte und Listen ab.",
+        "resolved_at": "2026-10-19T20:06:03Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-10-19T20:06:28Z"
+}

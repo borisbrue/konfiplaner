@@ -67,7 +67,7 @@ Die reale Eingabe ist eine Zuordnungsliste von Lehrkräften zu Fachkonferenzen: 
 - **FR-06 (Fehler bis bestätigt):** Jede Zelle mit Status `vorschlag` oder `unbekannt` ist ein Fehler (Blatt, Zeile, Spalte, Rohwert, ggf. Vorschlag); solange Fehler bestehen, wird kein Modell geliefert (SPEC-0001 FR-07).
 - **FR-07 (Bestätigen):** Eine Zuordnung (Rohwert → Liste von Konferenzen) lässt sich bestätigen oder ändern; der Schlüssel des Rohwerts ignoriert Groß-/Kleinschreibung und Leerzeichen um „/" und „,". Bestätigte Zuordnungen wirken auf alle Vorkommen.
 - **FR-08 (Vorsitz):** Der Wert in „Vorsitzende" ist die Konferenz, die die Person leitet (SPEC-0006). Leitet mehr als eine Person dieselbe Konferenz, ist das ein Fehler; eine Person darf mehrere leiten. Der Vorsitz muss nicht Mitglied sein.
-- **FR-09 (Ohne Konferenz):** Personen ohne zugeordnete Konferenz erzeugen eine Warnung und stehen in einer Liste `ohne_konferenz`; sie nehmen an keinem Termin teil.
+- **FR-09 (Ohne Konferenz):** Personen, die in der Datei keine Konferenz haben (abzugrenzen von „Neu zuordnen" nach einer Abwahl, SPEC-0009 FR-04), erzeugen eine Warnung und stehen in einer Liste `ohne_konferenz`; sie nehmen an keinem Termin teil.
 - **FR-10 (Persistenz):** Bestätigte Zuordnungen werden gespeichert (Einstellungsspeicher, SPEC-0005 FR-09) und beim nächsten Laden wieder angewandt. Änderungen an Themenwerten bleiben beim Neuladen erhalten.
 - **FR-11 (GUI):** Die Seite „Daten" hat die Reiter „Normalisierung" (Rohwert, Vorkommen, Zuordnung bearbeitbar, Status; Schaltfläche „Alle Vorschläge übernehmen") und „Ohne Konferenz". Der Export meldet Personen ohne Konferenz im Blatt „Hinweise".
 - **FR-12 (Modell):** `Person.themen` darf 0 bis n verschiedene Themen enthalten (SPEC-0002 FR-01 angepasst). Das Minimalformat aus SPEC-0001 verlangt weiterhin genau zwei.
@@ -129,3 +129,4 @@ Betroffener bestehender Contract: `importmodell-und-fehlerliste.schema.json` (CO
 | Datum      | Version | Autor        | Änderung            |
 |------------|---------|--------------|---------------------|
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
+| 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0009 (Konferenzauswahl), Version unverändert |

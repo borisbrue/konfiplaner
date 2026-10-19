@@ -140,9 +140,12 @@ class Importergebnis:
         themen: list[Thema],
         zeitslots: list[Zeitslot],
         verfuegbarkeit: dict[str, set[int]] | None = None,
+        personen: list[Person] | None = None,
     ) -> Modell:
-        """Modell aus den importierten Personen und (ggf. in der GUI ergänzten) Themen und Slots."""
-        return Modell(themen, self.personen, zeitslots, verfuegbarkeit or {})
+        """Modell aus den importierten Personen (oder `personen`) und den Themen und Slots."""
+        return Modell(
+            themen, self.personen if personen is None else personen, zeitslots, verfuegbarkeit or {}
+        )
 
 
 def _norm(text: Any) -> str:
