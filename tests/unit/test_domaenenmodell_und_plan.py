@@ -13,11 +13,14 @@ SCHEMA = json.loads(Path(".sdd/contracts/data/domaenenmodell-und-plan.schema.jso
 VALIDATOR = Draft202012Validator(SCHEMA)
 
 
-def test_person_braucht_genau_zwei_verschiedene_themen():
+def test_person_hat_null_bis_n_verschiedene_themen():
+    assert Person("A", ()).themen == ()
+    assert Person("A", ("X",)).themen == ("X",)
+    assert Person("A", ("X", "Y", "Z")).themen == ("X", "Y", "Z")
     with pytest.raises(ModellFehler):
         Person("A", ("X", "X"))
     with pytest.raises(ModellFehler):
-        Person(name="A", themen=("X",))
+        Person("A", ("X", "Y", "X"))
 
 
 @pytest.mark.parametrize(

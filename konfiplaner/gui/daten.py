@@ -10,8 +10,10 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QLineEdit,
+    QListWidget,
     QPushButton,
     QSpinBox,
     QSplitter,
@@ -24,7 +26,14 @@ from PySide6.QtWidgets import (
 
 from konfiplaner.anwendung import Sitzung
 from konfiplaner.excel_import import ImportDateiFehler, finde_spalte, rohdaten
-from konfiplaner.gui.modelle import FEHLER_FARBE, HINWEIS_FARBE, TabellenModell, ThemenModell, VorsitzDelegate
+from konfiplaner.gui.modelle import (
+    FEHLER_FARBE,
+    HINWEIS_FARBE,
+    NormalisierungsModell,
+    TabellenModell,
+    ThemenModell,
+    VorsitzDelegate,
+)
 from konfiplaner.modell import ModellFehler
 
 MELDUNGS_KOPF = ["Schwere", "Blatt", "Zeile", "Spalte", "Meldung"]
@@ -119,10 +128,45 @@ class DatenSeite(QWidget):
         s.addWidget(self.slot_tabelle, 1)
         self.erzeugen.clicked.connect(self._erzeuge_slots)
 
+        self.normalisierung = NormalisierungsModell(sitzung)
+        self.normalisierung.abgelehnt.connect(self.hinweis)
+        self.normalisierung.geaendert.connect(self._normalisierung_geaendert)
+        self.normalisierung_tabelle = _tabelle(self.normalisierung, "Normalisierung der Konferenznamen")
+        kopf_n = self.normalisierung_tabelle.horizontalHeader()
+        kopf_n.setStretchLastSection(False)
+        kopf_n.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        kopf_n.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        kopf_n.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        kopf_n.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        self.vorschlaege = QPushButton("&Alle Vorschläge übernehmen")
+        self.vorschlaege.clicked.connect(self._alle_vorschlaege)
+        normalisierung = QWidget()
+        n = QVBoxLayout(normalisierung)
+        n.addWidget(
+            self._hinweistext(
+                "Uneinheitliche Konferenznamen einmal zuordnen. Orange: Vorschlag, bitte prüfen und bestätigen; "
+                "rot: unbekannt. Die Zuordnung (Spalte 3) lässt sich durch Doppelklick ändern."
+            )
+        )
+        n.addWidget(self.vorschlaege)
+        n.addWidget(self.normalisierung_tabelle, 1)
+
+        self.ohne_konferenz = QListWidget()
+        self.ohne_konferenz.setAccessibleName("Lehrkräfte ohne Konferenz")
+        ohne = QWidget()
+        o = QVBoxLayout(ohne)
+        o.addWidget(
+            self._hinweistext("Diese Personen haben keine Konferenz und nehmen an keinem Termin teil:")
+        )
+        o.addWidget(self.ohne_konferenz, 1)
+
         self.reiter = QTabWidget()
         self.reiter.addTab(vorschau, "Vorschau")
         self.reiter.addTab(themen, "Themen")
         self.reiter.addTab(slots, "Zeitslots")
+        self.reiter.addTab(normalisierung, "Normalisierung")
+        self.reiter.addTab(ohne, "Ohne Konferenz")
+        self.TAB_NORMALISIERUNG, self.TAB_OHNE = 3, 4
 
         teiler = QSplitter()
         teiler.setOrientation(teiler.orientation().Vertical)
@@ -167,6 +211,23 @@ class DatenSeite(QWidget):
         else:
             self.zusammenfassung.setText("")
         self.meldungen.setze(zeilen)
+        self.meldungs_tabelle.resizeColumnsToContents()
+        self.meldungs_tabelle.horizontalHeader().setStretchLastSection(True)
+        lehrerliste = bool(erg and erg.lehrerliste)
+        self.reiter.setTabVisible(self.TAB_NORMALISIERUNG, lehrerliste)
+        self.reiter.setTabVisible(self.TAB_OHNE, lehrerliste)
+        self.normalisierung.neu()
+        offen = sum(1 for a in erg.aufloesungen if a.status != "sicher") if lehrerliste and erg else 0
+        self.vorschlaege.setEnabled(
+            any(a.status == "vorschlag" for a in erg.aufloesungen) if lehrerliste and erg else False
+        )
+        self.ohne_konferenz.clear()
+        self.ohne_konferenz.addItems(erg.ohne_konferenz if lehrerliste and erg else [])
+        if lehrerliste and erg:
+            self.zusammenfassung.setText(
+                self.zusammenfassung.text()
+                + f", {len(erg.ohne_konferenz)} ohne Konferenz, {offen} Zuordnungen offen"
+            )
         self.themen.neu()
         self.slots.setze([[z.tag, z.start, z.ende] for z in s.zeitslots])
         quelle = "aus der Datei" if erg and erg.zeitslots and s.zeitslots == erg.zeitslots else "erzeugt"
@@ -197,6 +258,23 @@ class DatenSeite(QWidget):
         zeilen = self._roh.get(blatt, [])
         kopf = zeilen[0] if zeilen else []
         self.vorschau.setze([z + [""] * (len(kopf) - len(z)) for z in zeilen[1:]], kopf)
+
+    @staticmethod
+    def _hinweistext(text: str) -> QLabel:
+        label = QLabel(text)
+        label.setWordWrap(True)
+        return label
+
+    # ── Normalisierung (SPEC-0007) ───────────────────────────────────────────
+    def _normalisierung_geaendert(self) -> None:
+        self.aktualisieren()
+        self.daten_geaendert.emit()
+
+    def _alle_vorschlaege(self) -> None:
+        anzahl = self.sitzung.bestaetige_vorschlaege()
+        self.aktualisieren()
+        self.daten_geaendert.emit()
+        self.hinweis.emit(f"{anzahl} Vorschläge übernommen")
 
     # ── Fehlerliste → Quelle (FR-02) ─────────────────────────────────────────
     def _markiere_quelle(self, index: QModelIndex) -> None:

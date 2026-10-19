@@ -43,7 +43,7 @@ started_at: '2026-10-19T13:12:27Z'
 
 ## 1. Kontext & Motivation
 
-Kern von KonfiPlaner: aus Personen, Themen und Zeitslots einen Terminplan berechnen. Jede Person hat genau zwei Schwerpunktthemen aus einem festen Themenset. Jedes Thema muss mindestens einmal als Termin stattfinden; Themen unterscheiden sich in Wichtigkeit, Mindestanzahl und Dauer.
+Kern von KonfiPlaner: aus Personen, Themen und Zeitslots einen Terminplan berechnen. Jede Person hat zwei Schwerpunktthemen (allgemein 0 bis n, SPEC-0007) aus einem festen Themenset. Jedes Thema muss mindestens einmal als Termin stattfinden; Themen unterscheiden sich in Wichtigkeit, Mindestanzahl und Dauer.
 
 ## 2. Zielsetzung
 
@@ -69,7 +69,7 @@ Kern von KonfiPlaner: aus Personen, Themen und Zeitslots einen Terminplan berech
 
 ## 4. Funktionale Anforderungen
 
-- **FR-01 (Modell):** Domänenobjekte `Thema` (Name, Wichtigkeit, Mindestanzahl, Dauer), `Person` (Name, genau 2 Schwerpunktthemen, Verfügbarkeit), `Zeitslot`, `Termin` (Thema, Slot(s), Teilnehmer), `Plan`.
+- **FR-01 (Modell):** Domänenobjekte `Thema` (Name, Wichtigkeit, Mindestanzahl, Dauer), `Person` (Name, 0 bis n verschiedene, geordnete Schwerpunktthemen – das Minimalformat des Imports liefert genau 2, Lehrerlisten 0 bis 3 und mehr; SPEC-0007 FR-12, Verfügbarkeit), `Zeitslot`, `Termin` (Thema, Slot(s), Teilnehmer), `Plan`.
 - **FR-02 (Themenabdeckung):** Jedes Thema findet statt. Es darf genau einen Termin je Thema geben; mehr sind möglich, aber nicht erforderlich. Kein Thema darf entfallen (hart, aber über SPEC-0003 anpassbar).
 - **FR-03 (Mindestanzahl):** `Mindestanzahl` ist die Mindest-Teilnehmerzahl pro Termin (der Vorsitz zählt mit, SPEC-0006); jeder Termin des Themas erreicht sie (hart, anpassbar).
 - **FR-04 (Dauer):** Ein Termin belegt aufeinanderfolgende Slots, die mindestens die Themendauer abdecken. Der Startslot je Termin ist die zentrale Stellgröße des Solvers.
@@ -133,7 +133,7 @@ Feature: Planung
 | Test-ID  | Level       | Was prüft der Test?                              |
 |----------|-------------|--------------------------------------------------|
 | TST-0004 | acceptance  | Gherkin-Szenarien aus CON-0004                   |
-| TST-0003 | unit        | Modellvalidierung (genau 2 Schwerpunkte, …)      |
+| TST-0003 | unit        | Modellvalidierung (verschiedene Schwerpunkte, 0..n, …)      |
 | TST-0005 | performance | 500/30/40 in ≤ 60 s                              |
 
 ## 10. Offene Fragen
@@ -152,3 +152,4 @@ Feature: Planung
 | 2026-10-19 | 0.2.0   | Boris Brünen | Klärung: Mindestanzahl, Wichtigkeit, Excel-Layout, anpassbare Grundregeln |
 | 2026-10-19 | 0.3.0   | Boris Brünen | SOLID-Review: Abhängigkeitsrichtung und Abstraktionen präzisiert |
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0006 (Vorsitz), Version unverändert |
+| 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0007 (0..n Schwerpunkte), Version unverändert |

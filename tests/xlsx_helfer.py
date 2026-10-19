@@ -26,3 +26,28 @@ SLOTS = [
     ["Mo", "08:45", "09:30"],
     ["Mo", "09:30", "10:15"],
 ]
+
+
+# Lehrerliste (SPEC-0007) mit erfundenen Namen
+LEHRER_KOPF = [
+    "Nachname ",
+    "Vorname ",
+    "Fächer",
+    "Fachkonferenz I ",
+    "Fachkonferenz II",
+    "ggfs. FK III (Absprache mit der Leitung)",
+    "Vorsitzende ",
+]
+LEHRER = [
+    ["Meier", "Anna", "D, E", "Deutsch", "Englisch", None, "Deutsch"],
+    ["Schulz", "Ben", "E, M", "Englisch", "Mathematik", None, "Englisch"],
+    ["Kaya", "Cem", "M", "Mathematik", None, None, "Mathematik"],
+    ["Roth", "Dora", "Sp", "Sport", "Deutsch", None, "Sport"],
+]
+
+
+def lehrerliste(zeilen: list[list] | None = None, zeitslots: bool = True) -> dict[str, list[list]]:
+    blaetter: dict[str, list[list]] = {"Tabelle1": [LEHRER_KOPF, *(LEHRER if zeilen is None else zeilen)]}
+    if zeitslots:
+        blaetter["Zeitslots"] = SLOTS
+    return blaetter

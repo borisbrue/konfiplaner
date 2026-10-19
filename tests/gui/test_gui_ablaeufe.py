@@ -300,3 +300,68 @@ def test_planen_mit_vorsitz_ueber_die_gui(qtbot, tmp_path):
     plane_und_warte(qtbot, f)
     termine = f.ergebnis.modelle["Termine"].zeilen()
     assert termine and all(z[4] == "P3" for z in termine if z[3] == f.sitzung.themen[0].name)
+
+
+# ── Lehrerliste und Normalisierung (SPEC-0007) ──────────────────────────────
+def lehrer_fenster(qtbot, tmp_path, zeilen=None):
+    from tests.xlsx_helfer import LEHRER, lehrerliste
+
+    daten = [*LEHRER, *(zeilen or [])]
+    return fenster(qtbot, tmp_path, lehrerliste(daten))
+
+
+def test_gui_zeigt_normalisierung_und_personen_ohne_konferenz(qtbot, tmp_path):
+    f, _ = lehrer_fenster(
+        qtbot,
+        tmp_path,
+        [["Berg", "Eva", "", "Mathe", None, None, None], ["Wolf", "Uwe", "", None, None, None, None]],
+    )
+    f.datei_oeffnen()
+    d = f.daten
+    assert d.reiter.isTabVisible(d.TAB_NORMALISIERUNG) and d.reiter.isTabVisible(d.TAB_OHNE)
+    assert [d.ohne_konferenz.item(i).text() for i in range(d.ohne_konferenz.count())] == ["Uwe Wolf"]
+    erste = d.normalisierung.zeile(0)  # offene Werte stehen oben
+    assert (erste.roh, erste.status) == ("Mathe", "vorschlag")
+    assert d.normalisierung.data(d.normalisierung.index(0, 3)) == "Vorschlag – bitte bestätigen"
+    assert d.normalisierung.data(d.normalisierung.index(0, 0), Qt.ItemDataRole.BackgroundRole) is not None
+    assert not f.planen.planen.isEnabled()  # Fehler offen -> nicht planbar
+
+
+def test_gui_alle_vorschlaege_uebernehmen_macht_planbar(qtbot, tmp_path):
+    f, _ = lehrer_fenster(qtbot, tmp_path, [["Berg", "Eva", "", "Mathe", "Sport/Deutsch", None, None]])
+    f.datei_oeffnen()
+    assert f.daten.vorschlaege.isEnabled()
+    qtbot.mouseClick(f.daten.vorschlaege, Qt.MouseButton.LeftButton)
+    assert not f.sitzung.ergebnis.fehler and f.sitzung.planbar and f.planen.planen.isEnabled()
+    assert not f.daten.vorschlaege.isEnabled() and f.daten.meldungen.rowCount() == 0
+    assert "Vorschläge übernommen" in f.statusBar().currentMessage()
+
+
+def test_gui_zuordnung_von_hand_aendern(qtbot, tmp_path):
+    f, _ = lehrer_fenster(qtbot, tmp_path, [["Berg", "Eva", "", "TC", None, None, None]])
+    f.datei_oeffnen()
+    modell = f.daten.normalisierung
+    assert (modell.zeile(0).roh, modell.zeile(0).status) == ("TC", "unbekannt")
+    with qtbot.waitSignal(modell.abgelehnt):
+        assert not modell.setData(modell.index(0, 2), "  ")
+    assert modell.setData(modell.index(0, 2), "Technik")
+    assert not f.sitzung.ergebnis.fehler
+    assert next(p for p in f.sitzung.ergebnis.personen if p.name == "Eva Berg").themen == ("Technik",)
+
+
+def test_gui_lehrerliste_plant_und_exportiert_vorsitz(qtbot, tmp_path):
+    f, _ = lehrer_fenster(qtbot, tmp_path, [["Wolf", "Uwe", "", None, None, None, None]])
+    f.datei_oeffnen()
+    assert f.reiter.currentIndex() == SEITE_PLANEN and f.planen.planen.isEnabled()
+    plane_und_warte(qtbot, f)
+    termine = f.ergebnis.modelle["Termine"].zeilen()
+    assert {z[3]: z[4] for z in termine}["Deutsch"] == "Anna Meier"
+    hinweise = f.ergebnis.modelle["Hinweise"].zeilen()
+    assert ["Warnung", "Uwe Wolf hat keine Konferenz"] in hinweise
+
+
+def test_gui_minimalformat_blendet_lehrerlisten_reiter_aus(qtbot, tmp_path):
+    f, _ = fenster(qtbot, tmp_path, {"Personen": PERSONEN_VIELE, "Zeitslots": SLOTS})
+    f.datei_oeffnen()
+    assert not f.daten.reiter.isTabVisible(f.daten.TAB_NORMALISIERUNG)
+    assert not f.daten.reiter.isTabVisible(f.daten.TAB_OHNE)

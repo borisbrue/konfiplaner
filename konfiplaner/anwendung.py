@@ -17,6 +17,7 @@ from konfiplaner.einstellungen import Einstellungsspeicher, KeineEinstellungen
 from konfiplaner.excel_export import exportiere, tabellen
 from konfiplaner.excel_import import Importergebnis, importiere
 from konfiplaner.modell import Modell, ModellFehler, Plan, Thema, Zeitslot
+from konfiplaner.normalisierung import VORSCHLAG, Normalisierung
 from konfiplaner.planer import Abbruchsignal, Fortschritt, Planer, PlanerOptionen
 from konfiplaner.restriktionen import (
     STANDARD_REGISTRY,
@@ -31,6 +32,7 @@ from konfiplaner.zeitraster import erzeuge_slots
 
 log = logging.getLogger(__name__)
 
+THEMENWERTE = ("wichtigkeit", "mindestanzahl", "dauer_min")
 STANDARD_ZEITLIMIT_S = 60.0
 STANDARD_ZEITRASTER = {"tage": "Samstag", "beginn": "09:00", "ende": "12:00", "laenge_min": 45}
 
@@ -70,6 +72,8 @@ class Sitzung:
         self.zeitraster: dict[str, Any] = dict(STANDARD_ZEITRASTER)
         self.letzter_exportordner: Path | None = None
         self._mtime: float | None = None
+        self.normalisierung = Normalisierung()
+        self._themenwerte: dict[str, dict[str, int]] = {}
         self._lade_einstellungen()
 
     # ── Einstellungen (FR-07) ───────────────────────────────────────────────
@@ -90,6 +94,14 @@ class Sitzung:
             self.zeitraster.update(daten["zeitraster"])
         if isinstance(daten.get("letzter_exportordner"), str):
             self.letzter_exportordner = Path(daten["letzter_exportordner"])
+        self.normalisierung = Normalisierung.aus_dict(daten.get("normalisierung"))
+        werte = daten.get("themenwerte")
+        if isinstance(werte, dict):
+            self._themenwerte = {
+                str(n): {k: v for k, v in w.items() if k in THEMENWERTE and isinstance(v, int)}
+                for n, w in werte.items()
+                if isinstance(w, dict)
+            }
         regeln = daten.get("regeln")
         if isinstance(regeln, dict):
             for name, eintrag in regeln.items():
@@ -107,6 +119,8 @@ class Sitzung:
                 "zeitlimit_s": self.zeitlimit_s,
                 "zeitraster": dict(self.zeitraster),
                 "letzter_exportordner": str(self.letzter_exportordner) if self.letzter_exportordner else None,
+                "normalisierung": self.normalisierung.bestaetigt(),
+                "themenwerte": {n: dict(w) for n, w in self._themenwerte.items()},
                 "regeln": {
                     n: {"typ": e.typ, "gewicht": e.gewicht, "parameter": dict(e.parameter)}
                     for n, e in self.konfiguration.einstellungen.items()
@@ -118,10 +132,15 @@ class Sitzung:
     def lade(self, pfad: str | Path) -> Importergebnis:
         """Liest die Datei; `ImportDateiFehler` bei unlesbaren Dateien (Zustand bleibt dann unverändert)."""
         pfad = Path(pfad)
-        ergebnis = importiere(pfad)
+        ergebnis = importiere(pfad, normalisierung=self.normalisierung)
+        erzeugte_slots = self.zeitslots if self.datei == pfad and not ergebnis.zeitslots else []
         self.datei, self.ergebnis = pfad, ergebnis
-        self.themen = list(ergebnis.themen)
-        self.zeitslots = list(ergebnis.zeitslots)
+        # Beim Neuladen bleiben geänderte Themenwerte und erzeugte Zeitslots erhalten (SPEC-0007 FR-10)
+        self.themen = [
+            dataclasses.replace(t, **self._themenwerte[t.name]) if t.name in self._themenwerte else t
+            for t in ergebnis.themen
+        ]
+        self.zeitslots = list(ergebnis.zeitslots) or list(erzeugte_slots)
         self.verfuegbarkeit = {k: set(v) for k, v in ergebnis.verfuegbarkeit.items()}
         self.plan = self.plan_modell = None
         self._mtime = pfad.stat().st_mtime
@@ -151,7 +170,29 @@ class Sitzung:
             felder["vorsitz"] = name
         neu = dataclasses.replace(self.themen[index], **felder)
         self.themen[index] = neu
+        werte = {k: v for k, v in felder.items() if k in THEMENWERTE}
+        if werte:
+            self._themenwerte.setdefault(neu.name, {}).update(werte)
         self.plan = self.plan_modell = None
+
+    # ── Normalisierung (SPEC-0007 FR-07) ────────────────────────────────────
+    def bestaetige(self, roh: str, konferenzen: list[str]) -> Importergebnis:
+        """Bestätigt eine Zuordnung für alle Vorkommen und liest die Datei neu ein."""
+        self.normalisierung.bestaetige(roh, konferenzen)
+        return self._nach_normalisierung()
+
+    def bestaetige_vorschlaege(self) -> int:
+        """Bestätigt alle offenen Vorschläge; Rückgabe: Anzahl."""
+        offen = [a for a in (self.ergebnis.aufloesungen if self.ergebnis else []) if a.status == VORSCHLAG]
+        for a in offen:
+            self.normalisierung.bestaetige(a.roh, list(a.konferenzen))
+        if offen:
+            self._nach_normalisierung()
+        return len(offen)
+
+    def _nach_normalisierung(self) -> Importergebnis:
+        self.speichere()
+        return self.neu_laden()
 
     def personen_namen(self) -> list[str]:
         return [p.name for p in self.ergebnis.personen] if self.ergebnis else []
@@ -243,6 +284,8 @@ class Sitzung:
         plan = self.planer.planen(
             modell, self.konfiguration, PlanerOptionen(zeitlimit_s=self.zeitlimit_s), fortschritt, abbruch
         )
+        if self.ergebnis is not None:
+            plan.warnungen += [f"{name} hat keine Konferenz" for name in self.ergebnis.ohne_konferenz]
         self.plan, self.plan_modell = plan, modell
         return plan
 

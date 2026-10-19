@@ -166,3 +166,73 @@ class VorsitzDelegate(QStyledItemDelegate):
     ) -> None:
         if isinstance(editor, QComboBox):
             model.setData(index, editor.currentData(), Qt.ItemDataRole.EditRole)
+
+
+STATUS_TEXT = {"sicher": "sicher", "vorschlag": "Vorschlag – bitte bestätigen", "unbekannt": "unbekannt"}
+
+
+class NormalisierungsModell(QAbstractTableModel):
+    """Rohwerte der Lehrerliste mit Vorkommen, bearbeitbarer Zuordnung und Status (SPEC-0007 FR-11)."""
+
+    KOPF = ("Rohwert", "Vorkommen", "Zuordnung (mit Komma trennen)", "Status")
+    abgelehnt = Signal(str)
+    geaendert = Signal()
+
+    def __init__(self, sitzung: Sitzung) -> None:
+        super().__init__()
+        self._sitzung = sitzung
+        self._zeilen: list = []
+
+    def neu(self) -> None:
+        self.beginResetModel()
+        erg = self._sitzung.ergebnis
+        rang = {"unbekannt": 0, "vorschlag": 1, "sicher": 2}
+        self._zeilen = (
+            sorted(erg.aufloesungen, key=lambda a: (rang[a.status], -a.vorkommen, a.roh)) if erg else []
+        )
+        self.endResetModel()
+
+    def zeile(self, i: int):
+        return self._zeilen[i]
+
+    def rowCount(self, parent: QModelIndex | QPersistentModelIndex = LEER) -> int:
+        return 0 if parent.isValid() else len(self._zeilen)
+
+    def columnCount(self, parent: QModelIndex | QPersistentModelIndex = LEER) -> int:
+        return 0 if parent.isValid() else len(self.KOPF)
+
+    def data(
+        self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.ItemDataRole.DisplayRole
+    ) -> Any:
+        if not index.isValid():
+            return None
+        a = self._zeilen[index.row()]
+        if role in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole):
+            return (a.roh, str(a.vorkommen), ", ".join(a.konferenzen), STATUS_TEXT[a.status])[index.column()]
+        if role == Qt.ItemDataRole.BackgroundRole:
+            return {"unbekannt": FEHLER_FARBE, "vorschlag": HINWEIS_FARBE}.get(a.status)
+        return None
+
+    def flags(self, index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlag:
+        basis = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+        return basis | Qt.ItemFlag.ItemIsEditable if index.column() == 2 else basis
+
+    def setData(
+        self, index: QModelIndex | QPersistentModelIndex, value: Any, role: int = Qt.ItemDataRole.EditRole
+    ) -> bool:
+        if role != Qt.ItemDataRole.EditRole or index.column() != 2:
+            return False
+        namen = [n.strip() for n in str(value).split(",") if n.strip()]
+        if not namen:
+            self.abgelehnt.emit("Mindestens eine Konferenz eintragen")
+            return False
+        self._sitzung.bestaetige(self._zeilen[index.row()].roh, namen)
+        self.geaendert.emit()
+        return True
+
+    def headerData(
+        self, section: int, orientation: Qt.Orientation, role: int = Qt.ItemDataRole.DisplayRole
+    ) -> Any:
+        if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Horizontal:
+            return self.KOPF[section]
+        return None

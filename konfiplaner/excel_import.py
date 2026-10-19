@@ -15,7 +15,9 @@ from typing import Any
 from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 
+from konfiplaner.lehrerliste import ist_lehrerliste, lese_lehrerliste
 from konfiplaner.modell import Modell, ModellFehler, Person, Thema, Zeitslot
+from konfiplaner.normalisierung import Aufloesung, Normalisierung
 
 STANDARD_WICHTIGKEIT = 3
 STANDARD_MINDESTANZAHL = 1
@@ -71,6 +73,10 @@ class Importergebnis:
     zeitslots: list[Zeitslot] = field(default_factory=list)
     verfuegbarkeit: dict[str, set[int]] = field(default_factory=dict)
     quelle: dict[tuple[str, int], str] = field(default_factory=dict)
+    # Lehrerliste (SPEC-0007)
+    lehrerliste: bool = False
+    aufloesungen: list[Aufloesung] = field(default_factory=list)
+    ohne_konferenz: list[str] = field(default_factory=list)
 
     @property
     def fehler(self) -> list[Meldung]:
@@ -138,8 +144,16 @@ def _leer(wert: Any) -> bool:
     return wert is None or (isinstance(wert, str) and not wert.strip())
 
 
-def importiere(pfad: str | Path, zuordnung: dict[str, list[str]] | None = None) -> Importergebnis:
-    """Liest eine `.xlsx`-Datei. `zuordnung` ergänzt die Überschriften-Aliasse je Spalte."""
+def importiere(
+    pfad: str | Path,
+    zuordnung: dict[str, list[str]] | None = None,
+    normalisierung: Normalisierung | None = None,
+) -> Importergebnis:
+    """Liest eine `.xlsx`-Datei (Minimalformat oder Lehrerliste, SPEC-0001 FR-11).
+
+    `zuordnung` ergänzt die Überschriften-Aliasse je Spalte, `normalisierung` enthält bestätigte
+    Konferenz-Zuordnungen der Lehrerliste.
+    """
     pfad = Path(pfad)
     try:
         mappe = load_workbook(pfad, data_only=True, read_only=True)
@@ -148,13 +162,16 @@ def importiere(pfad: str | Path, zuordnung: dict[str, list[str]] | None = None) 
             f"{pfad.name} ist keine lesbare Excel-Datei (beschädigt, passwortgeschützt oder falsches Format)"
         ) from e
     try:
-        return _Leser(mappe, zuordnung or {}).lese()
+        return _Leser(mappe, zuordnung or {}, normalisierung or Normalisierung()).lese()
     finally:
         mappe.close()
 
 
 def finde_spalte(kopfzeile: list[str], spalte: str) -> int | None:
     """Index der Kopfzeilen-Zelle, die zur Meldungs-Spalte (z. B. "Thema 1") gehört."""
+    for i, zelle in enumerate(kopfzeile):  # Überschrift stimmt wörtlich (Lehrerliste)
+        if zelle and _norm(zelle) == _norm(spalte):
+            return i
     kanon = _norm(spalte).replace(" ", "_")
     aliasse = {_norm(a) for a in STANDARD_ALIASSE.get(kanon, (kanon,))}
     for i, zelle in enumerate(kopfzeile):
@@ -185,8 +202,9 @@ def rohdaten(pfad: str | Path) -> dict[str, list[list[str]]]:
 
 
 class _Leser:
-    def __init__(self, mappe, zuordnung: dict[str, list[str]]) -> None:
+    def __init__(self, mappe, zuordnung: dict[str, list[str]], normalisierung: Normalisierung) -> None:
         self.mappe = mappe
+        self.normalisierung = normalisierung
         self.aliasse = {
             k: {_norm(a) for a in (*STANDARD_ALIASSE.get(k, (k,)), *zuordnung.get(k, ()))}
             for k in {*STANDARD_ALIASSE, *zuordnung}
@@ -285,7 +303,21 @@ class _Leser:
         return None
 
     # ── Blätter ─────────────────────────────────────────────────────────────
+    def _lehrerlisten_blatt(self) -> str | None:
+        for name in self.mappe.sheetnames:
+            erste = next(iter(self.mappe[name].iter_rows(max_row=1, values_only=True)), None)
+            if erste and ist_lehrerliste(list(erste)):
+                return name
+        return None
+
     def lese(self) -> Importergebnis:
+        blatt = self._lehrerlisten_blatt()
+        if blatt is not None:
+            zeilen = [list(z) for z in self.mappe[blatt].iter_rows(values_only=True)]
+            lese_lehrerliste(blatt, zeilen, self.normalisierung, self.erg)
+            self._zeitslots()
+            self._verfuegbarkeit()
+            return self.erg
         for pflicht in PFLICHTBLAETTER:
             if _norm(pflicht) not in self._blaetter:
                 self._meld("fehler", pflicht, 1, "", f"Blatt {pflicht} fehlt")

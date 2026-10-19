@@ -124,9 +124,16 @@ class Hauptfenster(QMainWindow):
         self._aktualisiere_zustand()
         if erg.fehler:
             self.reiter.setCurrentIndex(SEITE_DATEN)
-            self.statusBar().showMessage(
-                f"{len(erg.fehler)} Fehler in der Datei – bitte korrigieren und neu laden"
-            )
+            offen = sum(1 for z in erg.aufloesungen if z.status != "sicher")
+            if erg.lehrerliste and offen:
+                self.daten.reiter.setCurrentIndex(self.daten.TAB_NORMALISIERUNG)
+                self.statusBar().showMessage(
+                    f"{offen} Konferenznamen noch nicht zugeordnet – Reiter Normalisierung"
+                )
+            else:
+                self.statusBar().showMessage(
+                    f"{len(erg.fehler)} Fehler in der Datei – bitte korrigieren und neu laden"
+                )
         elif self.sitzung.planbar:
             self.reiter.setCurrentIndex(SEITE_PLANEN)
             self.statusBar().showMessage(f"{pfad.name} geladen – bereit zum Planen")

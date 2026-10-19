@@ -33,13 +33,13 @@ class Thema:
 @dataclass(frozen=True)
 class Person:
     name: str
-    themen: tuple[str, str]
+    themen: tuple[str, ...]  # 0 bis n verschiedene Schwerpunktthemen in Rangfolge (SPEC-0007 FR-12)
 
     def __post_init__(self) -> None:
         if not self.name.strip():
             raise ModellFehler("Person ohne Namen")
-        if len(self.themen) != 2 or self.themen[0] == self.themen[1]:
-            raise ModellFehler(f"Person {self.name}: genau zwei verschiedene Schwerpunktthemen nötig")
+        if len(set(self.themen)) != len(self.themen):
+            raise ModellFehler(f"Person {self.name}: Schwerpunktthemen müssen verschieden sein")
 
 
 @dataclass(frozen=True)

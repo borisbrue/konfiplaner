@@ -56,7 +56,7 @@ Ein Thema kann einen Vorsitz haben: eine Person, die den Termin leitet und desha
 
 - **FR-01 (Modell):** `Thema` hat ein optionales Feld `vorsitz` (Name einer Person der Personenliste). Ein unbekannter Name ist ein Modellfehler. Pro Thema gibt es höchstens einen Vorsitz; eine Person darf mehrere Themen leiten.
 - **FR-02 (Grundregel):** Neue Grundregel `vorsitz` (Standard hart): Der Vorsitz nimmt an jedem stattfindenden Termin seines Themas teil. Wie alle Grundregeln ist sie hart, weich oder aus konfigurierbar (SPEC-0003 FR-03); als weiche Regel kostet jeder Termin ohne Vorsitz das Gewicht.
-- **FR-03 (Teilnahme ohne Schwerpunkt):** Der Vorsitz nimmt am Termin teil, auch wenn das Thema keiner seiner zwei Schwerpunkte ist. Für Überschneidungen und Verfügbarkeiten gelten dieselben Regeln wie für jede Teilnahme.
+- **FR-03 (Teilnahme ohne Schwerpunkt):** Der Vorsitz nimmt am Termin teil, auch wenn das Thema keiner seiner Schwerpunkte ist. Für Überschneidungen und Verfügbarkeiten gelten dieselben Regeln wie für jede Teilnahme.
 - **FR-04 (Mindestanzahl):** Der Vorsitz zählt zur Mindestanzahl des Termins (SPEC-0002 FR-03).
 - **FR-05 (Mehrere Termine):** Hat ein Thema mehrere Termine, ist der Vorsitz in allen; die Regel „höchstens ein Termin je Person und Thema" gilt für ihn nicht. Hat der Vorsitz das Thema als Schwerpunkt, genügt mindestens ein Termin für `schwerpunkte`.
 - **FR-06 (Import):** Das Blatt `Themen` hat eine optionale Spalte `Vorsitz` (Überschriften auch `Vorsitzender`, `Leitung`). Ein Name, der nicht im Blatt `Personen` steht, ist ein Fehler mit Blatt, Zeile und Spalte. Eine leere Zelle bedeutet keinen Vorsitz.
@@ -118,3 +118,4 @@ Betroffene bestehende Artefakte (mit angepasst): `importmodell-und-fehlerliste.s
 | Datum      | Version | Autor        | Änderung            |
 |------------|---------|--------------|---------------------|
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
+| 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0007 (0..n Schwerpunkte), Version unverändert |

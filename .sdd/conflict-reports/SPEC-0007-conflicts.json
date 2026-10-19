@@ -1,0 +1,128 @@
+{
+  "spec_id": "SPEC-0007",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0007-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0001:FR-01",
+      "detail": "SPEC-0007 führt mit der Lehrerlisten-Erkennung (Spalten Nachname/Vorname) einen zweiten Import-Pfad für Personen und Themen neben dem Excel-Import aus SPEC-0001 ein, sodass die Formaterkennung und die Blattlogik an zwei Stellen definiert sind.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Adressiert: importiere bleibt einzige Einstiegsstelle mit Format-Auswahl (SPEC-0001 FR-11); gleiche Fehlerliste/Meldungsstruktur; Person.themen 0..n (SPEC-0002 FR-01, SPEC-0007 FR-12); Themenattribute aus SPEC-0001 FR-05; Mehrfachvorsitz ist ein Fehler (SPEC-0007 FR-08), Vorsitz-Semantik nach SPEC-0006.",
+        "resolved_at": "2026-10-19T19:38:40Z"
+      }
+    },
+    {
+      "id": "CF-0007-R002",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-02",
+      "conflicting_contract": "SPEC-0001:FR-02",
+      "detail": "Die Personen- und Themenerzeugung aus der Lehrerliste (Name aus Vorname und Nachname, Themen aus zugeordneten Konferenzen) deckt dasselbe Ziel ab wie die Personen-/Themen-Blätter in SPEC-0001.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Adressiert: importiere bleibt einzige Einstiegsstelle mit Format-Auswahl (SPEC-0001 FR-11); gleiche Fehlerliste/Meldungsstruktur; Person.themen 0..n (SPEC-0002 FR-01, SPEC-0007 FR-12); Themenattribute aus SPEC-0001 FR-05; Mehrfachvorsitz ist ein Fehler (SPEC-0007 FR-08), Vorsitz-Semantik nach SPEC-0006.",
+        "resolved_at": "2026-10-19T19:38:40Z"
+      }
+    },
+    {
+      "id": "CF-0007-R004",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "FR-02",
+      "conflicting_contract": "SPEC-0002:FR-01",
+      "detail": "SPEC-0002 geht von genau zwei Schwerpunktthemen pro Person aus, während SPEC-0007 Personen mit 0 bis 3 Konferenzen (Person.themen) erlaubt. Die Invariante und die Solver-Annahmen zur Themenanzahl müssen angepasst werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Adressiert: importiere bleibt einzige Einstiegsstelle mit Format-Auswahl (SPEC-0001 FR-11); gleiche Fehlerliste/Meldungsstruktur; Person.themen 0..n (SPEC-0002 FR-01, SPEC-0007 FR-12); Themenattribute aus SPEC-0001 FR-05; Mehrfachvorsitz ist ein Fehler (SPEC-0007 FR-08), Vorsitz-Semantik nach SPEC-0006.",
+        "resolved_at": "2026-10-19T19:38:40Z"
+      }
+    },
+    {
+      "id": "CF-0007-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Erfolgskriterien",
+      "conflicting_contract": "SPEC-0001:FR-01",
+      "detail": "SPEC-0007 meldet unbestätigte Zuordnungen als Fehler, und SPEC-0001 hat bereits eine Fehlerliste mit Blatt, Zeile und Spalte. Beide müssen dieselbe Fehlerliste (importmodell-und-fehlerliste.schema.json) nutzen und dürfen keinen eigenen Fehlerkanal einführen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Adressiert: importiere bleibt einzige Einstiegsstelle mit Format-Auswahl (SPEC-0001 FR-11); gleiche Fehlerliste/Meldungsstruktur; Person.themen 0..n (SPEC-0002 FR-01, SPEC-0007 FR-12); Themenattribute aus SPEC-0001 FR-05; Mehrfachvorsitz ist ein Fehler (SPEC-0007 FR-08), Vorsitz-Semantik nach SPEC-0006.",
+        "resolved_at": "2026-10-19T19:38:41Z"
+      }
+    },
+    {
+      "id": "CF-0007-R006",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0006:FR-01",
+      "detail": "SPEC-0006 definiert die Excel-Spalte `Vorsitz` für den Vorsitz pro Thema, SPEC-0007 liest die Spalte „Vorsitzende“ (Name der geleiteten Konferenz) ein. Beide setzen denselben Modellwert Thema.vorsitz über unterschiedliche Spaltenkonventionen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Adressiert: importiere bleibt einzige Einstiegsstelle mit Format-Auswahl (SPEC-0001 FR-11); gleiche Fehlerliste/Meldungsstruktur; Person.themen 0..n (SPEC-0002 FR-01, SPEC-0007 FR-12); Themenattribute aus SPEC-0001 FR-05; Mehrfachvorsitz ist ein Fehler (SPEC-0007 FR-08), Vorsitz-Semantik nach SPEC-0006.",
+        "resolved_at": "2026-10-19T19:38:41Z"
+      }
+    },
+    {
+      "id": "CF-0007-R007",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "FR-02",
+      "conflicting_contract": "SPEC-0006:FR-01",
+      "detail": "SPEC-0006 schließt mehrere Vorsitzende pro Thema aus. In der Lehrerliste können mehrere Personen dieselbe (normalisierte) Konferenz als „Vorsitzende“ nennen, und zusammengesetzte Namen wie „GL/Sowi“ können auf mehrere Konferenzen abgebildet werden. Das Verhalten bei Mehrfachvorsitz ist nicht definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Adressiert: importiere bleibt einzige Einstiegsstelle mit Format-Auswahl (SPEC-0001 FR-11); gleiche Fehlerliste/Meldungsstruktur; Person.themen 0..n (SPEC-0002 FR-01, SPEC-0007 FR-12); Themenattribute aus SPEC-0001 FR-05; Mehrfachvorsitz ist ein Fehler (SPEC-0007 FR-08), Vorsitz-Semantik nach SPEC-0006.",
+        "resolved_at": "2026-10-19T19:38:41Z"
+      }
+    },
+    {
+      "id": "CF-0007-R008",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Erfolgskriterien",
+      "conflicting_contract": "SPEC-0004:FR-02",
+      "detail": "Personen ohne Konferenz sollen laut SPEC-0007 im Export sichtbar sein. Das berührt das Blatt `Personen` aus SPEC-0004, ohne dass der Export-Vertrag dort angepasst wird.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Adressiert: importiere bleibt einzige Einstiegsstelle mit Format-Auswahl (SPEC-0001 FR-11); gleiche Fehlerliste/Meldungsstruktur; Person.themen 0..n (SPEC-0002 FR-01, SPEC-0007 FR-12); Themenattribute aus SPEC-0001 FR-05; Mehrfachvorsitz ist ein Fehler (SPEC-0007 FR-08), Vorsitz-Semantik nach SPEC-0006.",
+        "resolved_at": "2026-10-19T19:38:42Z"
+      }
+    },
+    {
+      "id": "CF-0007-R009",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0005:FR-01",
+      "detail": "SPEC-0007 verlangt GUI-Anzeige und Bestätigung der Normalisierungstabelle sowie Sichtbarkeit von Personen ohne Konferenz. Das erweitert den Lade- und Fehleranzeige-Ablauf aus SPEC-0005 und muss dort konsistent eingebunden werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Adressiert: importiere bleibt einzige Einstiegsstelle mit Format-Auswahl (SPEC-0001 FR-11); gleiche Fehlerliste/Meldungsstruktur; Person.themen 0..n (SPEC-0002 FR-01, SPEC-0007 FR-12); Themenattribute aus SPEC-0001 FR-05; Mehrfachvorsitz ist ein Fehler (SPEC-0007 FR-08), Vorsitz-Semantik nach SPEC-0006.",
+        "resolved_at": "2026-10-19T19:38:42Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-10-19T19:39:10Z"
+}

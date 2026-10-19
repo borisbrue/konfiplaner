@@ -70,8 +70,6 @@
               },
               "themen": {
                 "type": "array",
-                "minItems": 2,
-                "maxItems": 2,
                 "uniqueItems": true,
                 "items": {
                   "type": "string",
