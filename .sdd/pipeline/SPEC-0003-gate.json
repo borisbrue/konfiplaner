@@ -1,0 +1,19 @@
+{
+  "spec_id": "SPEC-0003",
+  "pipeline_phase": "regression-ok",
+  "phase_history": [
+    {
+      "phase": "spec-draft",
+      "completed_at": "2026-10-19T12:59:36Z",
+      "result": "ok"
+    },
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-10-19T13:01:21Z",
+      "result": "ok"
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": null,
+  "override": null
+}

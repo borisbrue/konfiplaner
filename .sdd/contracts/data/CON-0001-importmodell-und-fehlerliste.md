@@ -6,7 +6,7 @@ type: data
 format: json-schema
 spec: SPEC-0001
 version: 0.1.0
-status: review
+status: approved
 artifact: ".sdd/contracts/data/importmodell-und-fehlerliste.schema.json"
 tests: ["TST-0001"]
 ---
@@ -31,19 +31,20 @@ Diese Regeln MÜSSEN für jede gültige Instanz gelten:
 **Gültig:**
 ```json
 {
-  "id": "01HZ...",
-  "name": "Beispiel"
+  "meldungen": [{"schwere": "warnung", "blatt": "Personen", "zeile": 7, "spalte": "Name", "text": "Name kommt doppelt vor"}],
+  "modell": {
+    "personen": [{"name": "Anna", "themen": ["Abendmahl", "Taufe"]}],
+    "themen": [{"name": "Abendmahl", "wichtigkeit": 3, "mindestanzahl": 2, "dauer_min": 45}]
+  }
 }
 ```
 
 **Ungültig (und warum):**
 ```json
-{
-  "id": "",
-  "name": null
-}
+{"meldungen": [{"schwere": "fehler", "blatt": "Personen", "zeile": 3, "spalte": "Thema 2", "text": "Unbekanntes Thema"}],
+ "modell": {"personen": [], "themen": []}}
 ```
-→ Verstößt gegen INV-01 (id darf nicht leer sein).
+→ Verstößt gegen INV-01 (Modell trotz Fehler).
 
 ## Validierung
 

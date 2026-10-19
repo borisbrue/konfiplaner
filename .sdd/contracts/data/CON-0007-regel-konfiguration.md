@@ -6,7 +6,7 @@ type: data
 format: json-schema
 spec: SPEC-0003
 version: 0.1.0
-status: review
+status: approved
 artifact: ".sdd/contracts/data/regel-konfiguration.schema.json"
 tests: ["TST-0007"]
 ---
@@ -31,19 +31,19 @@ Diese Regeln MÜSSEN für jede gültige Instanz gelten:
 **Gültig:**
 ```json
 {
-  "id": "01HZ...",
-  "name": "Beispiel"
+  "restriktionen": {
+    "mindestanzahl": {"typ": "hart"},
+    "schwerpunkte": {"typ": "weich", "gewicht": 5},
+    "nicht_zusammen": {"typ": "hart", "parameter": {"person_a": "Anna", "person_b": "Ben"}}
+  }
 }
 ```
 
 **Ungültig (und warum):**
 ```json
-{
-  "id": "",
-  "name": null
-}
+{"restriktionen": {"schwerpunkte": {"typ": "vielleicht", "gewicht": 0}}}
 ```
-→ Verstößt gegen INV-01 (id darf nicht leer sein).
+→ Verstößt gegen INV-01 (Typ) und INV-02 (Gewicht muss > 0 sein).
 
 ## Validierung
 

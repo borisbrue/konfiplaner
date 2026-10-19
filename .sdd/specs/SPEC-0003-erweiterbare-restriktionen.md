@@ -46,7 +46,7 @@ Die Liste der Planungsregeln wird wachsen (z. B. „Person A nie mit Person B", 
 - **FR-01:** Schnittstelle `Restriktion` mit: eindeutiger Name, Typ (`hart`/`weich`), Parameterschema, Methode `anwenden(modell, solver_kontext)`, Methode `erklaere(plan)` für Verstöße.
 - **FR-02:** Registry mit Registrierung per Dekorator und per Python-Entry-Point (`konfiplaner.restriktionen`).
 - **FR-03:** Auch die mitgelieferten Grundregeln sind anpassbar: je Restriktion Aktivierung, Typ (hart/weich/aus), Gewicht und Parameter in einer Konfigurationsdatei (YAML) und in der GUI änderbar, ohne Codeänderung.
-- **FR-04:** Mitgelieferte Restriktionen: Themenabdeckung, Mindestanzahl, Schwerpunkte, keine Überschneidung, Verfügbarkeit, Wichtigkeitsgewichtung.
+- **FR-04:** Mitgelieferte Grundregeln (Bezeichner, Standard-Typ): `themenabdeckung` (hart), `mindestanzahl` (hart), `schwerpunkte` (hart), `keine_ueberschneidung` (hart), `verfuegbarkeit` (hart), `wichtigkeit` (weich).
 - **FR-05:** Optional können Regeln aus Excel (Blatt `Regeln`) mit Parametern geladen werden.
 - **FR-07 (Abstraktion):** `anwenden` erhält einen abstrakten `Planungskontext` (Variablen für Termin-Slot und Teilnahme, Methoden zum Hinzufügen harter Bedingungen und gewichteter Strafterme), nicht das konkrete Solver-Objekt. Der Kontext wird vom Solver-Adapter bereitgestellt.
 - **FR-06:** Unbekannte oder fehlerhaft parametrierte Restriktionen führen zu einer klaren Fehlermeldung vor dem Solverlauf.
@@ -90,16 +90,16 @@ Feature: Restriktionen
 
 | Contract-ID | Typ      | Was wird garantiert?                          |
 |-------------|----------|-----------------------------------------------|
-| CON-XXXX    | behavior | Verhalten der Restriktions-Schnittstelle      |
-| CON-XXXX    | data     | JSON-Schema der Regel-Konfiguration           |
+| CON-0006    | behavior | Verhalten der Restriktions-Schnittstelle      |
+| CON-0007    | data     | JSON-Schema der Regel-Konfiguration           |
 
 ## 9. Tests (wie wird verifiziert)
 
 | Test-ID  | Level      | Was prüft der Test?                                |
 |----------|------------|----------------------------------------------------|
-| TST-XXXX | unit       | Registry, Parametervalidierung                     |
-| TST-XXXX | acceptance | Gherkin aus Sektion 6                              |
-| TST-XXXX | contract   | Konfigurationsschema                               |
+| TST-0007 | unit       | Registry, Parametervalidierung, Konfigurationsschema |
+| TST-0006 | acceptance | Gherkin-Szenarien aus CON-0006                     |
+| TST-0007 | contract   | Konfigurationsschema                               |
 
 ## 10. Offene Fragen
 

@@ -6,7 +6,7 @@ type: data
 format: json-schema
 spec: SPEC-0004
 version: 0.1.0
-status: review
+status: approved
 artifact: ".sdd/contracts/data/export-blattstruktur.schema.json"
 tests: ["TST-0008"]
 ---
@@ -30,19 +30,18 @@ Diese Regeln MÜSSEN für jede gültige Instanz gelten:
 **Gültig:**
 ```json
 {
-  "id": "01HZ...",
-  "name": "Beispiel"
+  "Termine": ["Tag", "Start", "Ende", "Thema", "Teilnehmerzahl"],
+  "Personen": ["Name", "Tag", "Start", "Ende", "Thema"],
+  "Themen": ["Thema", "Wichtigkeit", "Mindestanzahl", "Teilnehmerzahl", "Erfüllt"],
+  "Hinweise": ["Art", "Text"]
 }
 ```
 
 **Ungültig (und warum):**
 ```json
-{
-  "id": "",
-  "name": null
-}
+{"Termine": ["Thema", "Tag"]}
 ```
-→ Verstößt gegen INV-01 (id darf nicht leer sein).
+→ Verstößt gegen INV-01 (Blätter/Spalten unvollständig oder falsch sortiert).
 
 ## Validierung
 

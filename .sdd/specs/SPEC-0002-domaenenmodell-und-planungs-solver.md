@@ -64,7 +64,7 @@ Kern von KonfiPlaner: aus Personen, Themen und Zeitslots einen Terminplan berech
 | Kategorie        | Anforderung                                                |
 |------------------|------------------------------------------------------------|
 | Performance      | ≤ 60 s für 500/30/40 (Standardhardware, Steam Deck genügt)  |
-| Determinismus    | Gleicher Seed → gleicher Plan                              |
+| Determinismus    | Gleicher Seed → gleicher Plan, garantiert nur mit 1 Solver-Worker und ohne wirksames Zeitlimit |
 | Testbarkeit      | Solver ohne GUI/Excel aufrufbar (reine Library)            |
 | Datenschutz      | Keine Personendaten im Log                                 |
 
@@ -101,17 +101,17 @@ Feature: Planung
 
 | Contract-ID | Typ      | Was wird garantiert?                                   |
 |-------------|----------|--------------------------------------------------------|
-| CON-XXXX    | data     | JSON-Schema Domänenmodell und Plan                     |
-| CON-XXXX    | behavior | Gherkin-Szenarien zur Planung                          |
-| CON-XXXX    | performance | SLO Planungsdauer                                   |
+| CON-0003    | data     | JSON-Schema Domänenmodell und Plan                     |
+| CON-0004    | behavior | Gherkin-Szenarien zur Planung                          |
+| CON-0005    | performance | SLO Planungsdauer                                   |
 
 ## 9. Tests (wie wird verifiziert)
 
 | Test-ID  | Level       | Was prüft der Test?                              |
 |----------|-------------|--------------------------------------------------|
-| TST-XXXX | acceptance  | Gherkin aus Sektion 6                            |
-| TST-XXXX | unit        | Modellvalidierung (genau 2 Schwerpunkte, …)      |
-| TST-XXXX | performance | 500/30/40 in ≤ 60 s                              |
+| TST-0004 | acceptance  | Gherkin-Szenarien aus CON-0004                   |
+| TST-0003 | unit        | Modellvalidierung (genau 2 Schwerpunkte, …)      |
+| TST-0005 | performance | 500/30/40 in ≤ 60 s                              |
 
 ## 10. Offene Fragen
 

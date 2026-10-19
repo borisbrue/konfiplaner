@@ -6,7 +6,7 @@ type: performance
 format: slo-yaml
 spec: SPEC-0002
 version: 0.1.0
-status: review
+status: approved
 artifact: ".sdd/contracts/performance/planungsdauer.slo.yaml"
 tests: ["TST-0005"]
 ---
@@ -17,18 +17,17 @@ tests: ["TST-0005"]
 
 ## Service Level Objectives (SLOs)
 
-| SLI                     | Ziel       | Messfenster | Konsequenz bei Verletzung      |
-|-------------------------|------------|-------------|-------------------------------|
-| Latenz p95 (GET /...)   | < 200 ms   | 30 Tage     | Alert + Rollback-Kandidat     |
-| Verfügbarkeit           | ≥ 99.9 %   | 30 Tage     | Incident Review               |
-| Fehlerquote (5xx)       | < 0.1 %    | 24 Stunden  | Auto-Page                     |
+| SLI                              | Ziel          | Messfenster | Konsequenz bei Verletzung            |
+|----------------------------------|---------------|-------------|--------------------------------------|
+| Planungsdauer 500 P / 30 T / 40 S | ≤ 60 s        | je Lauf     | Performance-Test schlägt fehl        |
+| Reproduzierbarkeit (1 Worker)    | 100 % identisch | je Lauf   | Test schlägt fehl                    |
 
 ## Messung
 
-- **Datenquelle:** <z.B. Prometheus, Datadog>
-- **Erhebung:** <z.B. RED-Metrics auf API-Gateway>
-- **Tests:** Lasttests mit k6/Locust/Gatling laufen vor jedem Release
+- **Datenquelle:** Synthetische, per Seed erzeugte Instanz im Performance-Test
+- **Erhebung:** Wanduhrzeit von Aufruf `Planer.planen` bis Ergebnis (inkl. Modellaufbau)
+- **Tests:** pytest-Performance-Test (TST-0005), Referenzhardware: Steam Deck bzw. gleichwertig
 
 ## Error Budget
 
-Wird das Budget innerhalb des Messfensters verbraucht, gilt ein Feature-Freeze, bis die SLOs wieder eingehalten werden.
+Es gibt kein Budget: Die Ziele gelten pro Lauf; eine Verletzung blockiert den Merge.
