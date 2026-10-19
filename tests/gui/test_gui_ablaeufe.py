@@ -269,3 +269,34 @@ def test_fenster_passt_auf_kleine_bildschirme(qtbot, tmp_path, seite):
     f.reiter.setCurrentIndex(seite)
     f.resize(1024, 600)
     assert f.minimumSizeHint().width() <= 1024 and f.minimumSizeHint().height() <= 600
+
+
+def test_vorsitz_in_themen_tabelle_waehlen(qtbot, tmp_path):
+    f, _ = fenster(qtbot, tmp_path, {"Personen": PERSONEN_VIELE, "Zeitslots": SLOTS})
+    f.datei_oeffnen()
+    modell = f.daten.themen
+    assert modell.columnCount() == 5 and modell.headerData(4, Qt.Orientation.Horizontal) == "Vorsitz"
+    assert modell.setData(modell.index(0, 4), "P1")
+    assert f.sitzung.themen[0].vorsitz == "P1" and modell.data(modell.index(0, 4)) == "P1"
+    with qtbot.waitSignal(modell.abgelehnt):
+        assert not modell.setData(modell.index(0, 4), "Unbekannt")
+    assert modell.setData(modell.index(0, 4), "")  # "(keiner)"
+    assert f.sitzung.themen[0].vorsitz is None
+
+
+def test_vorsitz_auswahl_bietet_alle_personen(qtbot, tmp_path):
+    f, _ = fenster(qtbot, tmp_path, {"Personen": PERSONEN_VIELE, "Zeitslots": SLOTS})
+    f.datei_oeffnen()
+    delegate = f.daten.themen_tabelle.itemDelegateForColumn(4)
+    box = delegate.createEditor(f.daten, None, f.daten.themen.index(0, 4))
+    namen = [box.itemData(i) for i in range(box.count())]
+    assert namen[0] == "" and set(namen[1:]) == set(f.sitzung.personen_namen())
+
+
+def test_planen_mit_vorsitz_ueber_die_gui(qtbot, tmp_path):
+    f, _ = fenster(qtbot, tmp_path, {"Personen": PERSONEN_VIELE, "Zeitslots": SLOTS})
+    f.datei_oeffnen()
+    f.daten.themen.setData(f.daten.themen.index(0, 4), "P3")
+    plane_und_warte(qtbot, f)
+    termine = f.ergebnis.modelle["Termine"].zeilen()
+    assert termine and all(z[4] == "P3" for z in termine if z[3] == f.sitzung.themen[0].name)

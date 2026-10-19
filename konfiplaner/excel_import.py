@@ -28,6 +28,8 @@ BLAETTER = {
     "Verfügbarkeiten": ("person", "tag", "start"),
 }
 PFLICHTBLAETTER = ("Personen",)
+# Spalten, die fehlen dürfen (kein Fehler, kein Wert)
+OPTIONALE_SPALTEN = {"Themen": ("vorsitz",)}
 
 # Kanonischer Spaltenname -> akzeptierte Überschriften (normalisiert, siehe `_norm`)
 STANDARD_ALIASSE: dict[str, tuple[str, ...]] = {
@@ -37,6 +39,7 @@ STANDARD_ALIASSE: dict[str, tuple[str, ...]] = {
     "wichtigkeit": ("wichtigkeit", "prioritaet", "priorität"),
     "mindestanzahl": ("mindestanzahl", "mindestteilnehmer", "min"),
     "dauer": ("dauer", "dauer min", "dauer in minuten", "minuten"),
+    "vorsitz": ("vorsitz", "vorsitzender", "vorsitzende", "leitung"),
     "tag": ("tag", "datum"),
     "start": ("start", "beginn", "von"),
     "ende": ("ende", "bis"),
@@ -101,6 +104,7 @@ class Importergebnis:
                         "wichtigkeit": t.wichtigkeit,
                         "mindestanzahl": t.mindestanzahl,
                         "dauer_min": t.dauer_min,
+                        **({"vorsitz": t.vorsitz} if t.vorsitz else {}),
                     }
                     for t in modell.themen
                 ],
@@ -188,6 +192,7 @@ class _Leser:
             for k in {*STANDARD_ALIASSE, *zuordnung}
         }
         self.erg = Importergebnis()
+        self._themen_zeilen: dict[str, int] = {}
         self._blaetter = {_norm(n): n for n in mappe.sheetnames}
 
     # ── Hilfen ──────────────────────────────────────────────────────────────
@@ -206,12 +211,14 @@ class _Leser:
             return {}, []
         kopf = [_norm(c) for c in zeilen[0]]
         spalten: dict[str, int] = {}
-        for kanon in BLAETTER[blatt]:
+        for kanon in (*BLAETTER[blatt], *OPTIONALE_SPALTEN.get(blatt, ())):
             for i, h in enumerate(kopf):
                 if h in self.aliasse[kanon]:
                     spalten[kanon] = i
                     break
             else:
+                if kanon in OPTIONALE_SPALTEN.get(blatt, ()):
+                    continue
                 self._meld(
                     "fehler",
                     blatt,
@@ -286,6 +293,7 @@ class _Leser:
             return self.erg
         self._themen()
         self._personen()
+        self._vorsitze()
         self._zeitslots()
         self._verfuegbarkeit()
         return self.erg
@@ -308,7 +316,23 @@ class _Leser:
                 self._meld("fehler", "Themen", nr, "Name", f"Thema {name} kommt doppelt vor")
                 continue
             gesehen.add(name)
-            self.erg.themen.append(Thema(name, wichtig, mind, dauer))
+            vorsitz = self._wert(z, spalten, "vorsitz")
+            vorsitz = None if _leer(vorsitz) else str(vorsitz).strip()
+            self.erg.themen.append(Thema(name, wichtig, mind, dauer, vorsitz))
+            self._themen_zeilen[name] = nr
+
+    def _vorsitze(self) -> None:
+        """Der Vorsitz muss eine Person aus dem Blatt Personen sein (SPEC-0006 FR-06)."""
+        namen = {p.name for p in self.erg.personen}
+        for t in self.erg.themen:
+            if t.vorsitz is not None and t.vorsitz not in namen:
+                self._meld(
+                    "fehler",
+                    "Themen",
+                    self._themen_zeilen.get(t.name, 1),
+                    "Vorsitz",
+                    f"Vorsitz {t.vorsitz} steht nicht im Blatt Personen",
+                )
 
     def _personen(self) -> None:
         spalten, daten = self._zeilen("Personen") or ({}, [])

@@ -1,0 +1,113 @@
+{
+  "spec_id": "SPEC-0006",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0006-R001",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-02",
+      "conflicting_contract": "SPEC-0003:FR-03",
+      "detail": "SPEC-0006 FR-02 führt eine neue Grundregel `vorsitz` mit hart/weich/aus-Konfiguration ein, die genau den Mechanismus aus SPEC-0003 FR-03 nutzt. Die Regel sollte als Plugin dort registriert werden und keine Parallelkonfiguration anlegen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Berechtigt und nachgezogen: Die betroffenen Specs (0001, 0002, 0004, 0005) tragen jetzt die Vorsitz-Ausnahmen; Hart/Weich/Aus nutzt den bestehenden Regelmechanismus, Import/Export erweitern die bestehende Spaltenlogik.",
+        "resolved_at": "2026-10-19T19:17:24Z"
+      }
+    },
+    {
+      "id": "CF-0006-R002",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0002:FR-03",
+      "detail": "Beide Specs regeln, wer zur Mindestanzahl eines Termins zählt; SPEC-0006 FR-04 ergänzt die Zählung des Vorsitzes, die in SPEC-0002 FR-03 definiert ist.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Berechtigt und nachgezogen: Die betroffenen Specs (0001, 0002, 0004, 0005) tragen jetzt die Vorsitz-Ausnahmen; Hart/Weich/Aus nutzt den bestehenden Regelmechanismus, Import/Export erweitern die bestehende Spaltenlogik.",
+        "resolved_at": "2026-10-19T19:17:25Z"
+      }
+    },
+    {
+      "id": "CF-0006-R003",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "FR-05",
+      "conflicting_contract": "SPEC-0002:FR-03",
+      "detail": "SPEC-0006 FR-05 hebt die Regel „höchstens ein Termin je Person und Thema“ für den Vorsitz auf, die zum Solver-Kern aus SPEC-0002 gehört; die Ausnahme muss dort nachgezogen werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Berechtigt und nachgezogen: Die betroffenen Specs (0001, 0002, 0004, 0005) tragen jetzt die Vorsitz-Ausnahmen; Hart/Weich/Aus nutzt den bestehenden Regelmechanismus, Import/Export erweitern die bestehende Spaltenlogik.",
+        "resolved_at": "2026-10-19T19:17:25Z"
+      }
+    },
+    {
+      "id": "CF-0006-R005",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-06",
+      "conflicting_contract": "SPEC-0001:FR-02",
+      "detail": "SPEC-0006 FR-06 erweitert das Blatt `Themen` um die Spalte `Vorsitz` samt Fehlerberichten mit Blatt, Zeile und Spalte. Das überschneidet sich mit der Themen-Import- und Validierungslogik in SPEC-0001, die dafür angepasst werden muss.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Berechtigt und nachgezogen: Die betroffenen Specs (0001, 0002, 0004, 0005) tragen jetzt die Vorsitz-Ausnahmen; Hart/Weich/Aus nutzt den bestehenden Regelmechanismus, Import/Export erweitern die bestehende Spaltenlogik.",
+        "resolved_at": "2026-10-19T19:17:25Z"
+      }
+    },
+    {
+      "id": "CF-0006-R006",
+      "type": "redundancy",
+      "severity": "medium",
+      "new_contract": "FR-07",
+      "conflicting_contract": "SPEC-0004:FR-01",
+      "detail": "SPEC-0004 FR-01 nennt die Spalte `Vorsitz` im Blatt `Termine` schon, und SPEC-0006 FR-07 fordert dieselbe Spalte noch einmal; die Spaltendefinition sollte nur in einer der beiden Specs stehen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Berechtigt und nachgezogen: Die betroffenen Specs (0001, 0002, 0004, 0005) tragen jetzt die Vorsitz-Ausnahmen; Hart/Weich/Aus nutzt den bestehenden Regelmechanismus, Import/Export erweitern die bestehende Spaltenlogik.",
+        "resolved_at": "2026-10-19T19:17:25Z"
+      }
+    },
+    {
+      "id": "CF-0006-R007",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0002:FR-01",
+      "detail": "SPEC-0006 FR-01 erweitert das Domänenmodell `Thema` um das Feld `vorsitz` und eine Validierung auf bekannte Personen. Beides gehört zum Modell, das SPEC-0002 definiert, und muss dort konsistent geführt werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Berechtigt und nachgezogen: Die betroffenen Specs (0001, 0002, 0004, 0005) tragen jetzt die Vorsitz-Ausnahmen; Hart/Weich/Aus nutzt den bestehenden Regelmechanismus, Import/Export erweitern die bestehende Spaltenlogik.",
+        "resolved_at": "2026-10-19T19:17:26Z"
+      }
+    },
+    {
+      "id": "CF-0006-R008",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-02",
+      "conflicting_contract": "SPEC-0005:FR-02",
+      "detail": "Die GUI-Eingabe des Vorsitzes aus SPEC-0006 und die Regelkonfiguration (hart/weich/aus) berühren die Ansichten und Regelschalter aus SPEC-0005, die dafür angepasst werden müssen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Berechtigt und nachgezogen: Die betroffenen Specs (0001, 0002, 0004, 0005) tragen jetzt die Vorsitz-Ausnahmen; Hart/Weich/Aus nutzt den bestehenden Regelmechanismus, Import/Export erweitern die bestehende Spaltenlogik.",
+        "resolved_at": "2026-10-19T19:17:26Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-10-19T19:17:52Z"
+}

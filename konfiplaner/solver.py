@@ -54,7 +54,11 @@ class _CpSatKontext:
         m, cp = self.modell, self.cp
         for t in m.themen:
             n = len(m.personen_zu(t.name))
-            self._k[t.name] = max(1, min(MAX_TERMINE_JE_THEMA, n // t.mindestanzahl))
+            if t.vorsitz is None:
+                moegliche = n // t.mindestanzahl
+            else:  # der Vorsitz sitzt in jedem Termin: die übrigen müssen nur Mindestanzahl - 1 stellen
+                moegliche = (n - 1) // max(1, t.mindestanzahl - 1)
+            self._k[t.name] = max(1, min(MAX_TERMINE_JE_THEMA, moegliche))
             self._bloecke[t.name] = m.bloecke(t.name)
             if not self._bloecke[t.name]:
                 self.keine_startslots.append(t.name)
@@ -74,7 +78,8 @@ class _CpSatKontext:
                     self._teil[p.name, t.name, j] = tv
                     cp.Add(tv <= a)
             for p in m.personen_zu(t.name):
-                cp.Add(sum(self._teil[p.name, t.name, j] for j in range(self._k[t.name])) <= 1)
+                if p.name != t.vorsitz:  # der Vorsitz ist in allen Terminen des Themas
+                    cp.Add(sum(self._teil[p.name, t.name, j] for j in range(self._k[t.name])) <= 1)
             self._ziel.extend(TERMIN_STRAFE * self._aktiv[t.name, j] for j in range(self._k[t.name]))
 
     # ── Planungskontext ──────────────────────────────────────────────────────
@@ -203,11 +208,12 @@ class CpSatPlaner:
                 modell, ctx, solver, regeln, optionen, "optimal" if status == cp_model.OPTIMAL else "machbar"
             )
         else:
-            gruende = (
-                self._diagnose(modell, regeln, optionen)
-                if status == cp_model.INFEASIBLE
-                else ["Abgebrochen, bevor ein Plan gefunden wurde"]
-            )
+            if status == cp_model.INFEASIBLE:
+                gruende = self._diagnose(modell, regeln, optionen)
+            elif abbruch is not None and abbruch.is_set():
+                gruende = ["Abgebrochen, bevor ein Plan gefunden wurde"]
+            else:
+                gruende = ["Zeitlimit erreicht, bevor ein Plan gefunden wurde – Zeitlimit erhöhen"]
             plan = Plan("kein_plan", begruendung=gruende, seed=optionen.seed)
         plan.warnungen = warnungen
         return plan

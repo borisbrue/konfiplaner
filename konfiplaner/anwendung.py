@@ -143,10 +143,18 @@ class Sitzung:
             return False
 
     def setze_thema(self, index: int, **felder: Any) -> None:
-        """Ändert Wichtigkeit, Mindestanzahl oder Dauer; ungültige Werte lösen `ModellFehler` aus."""
+        """Ändert Wichtigkeit, Mindestanzahl, Dauer oder Vorsitz; ungültige Werte lösen `ModellFehler` aus."""
+        if "vorsitz" in felder:
+            name = (felder["vorsitz"] or "").strip() or None
+            if name is not None and name not in self.personen_namen():
+                raise ModellFehler(f"Unbekannte Person {name} als Vorsitz")
+            felder["vorsitz"] = name
         neu = dataclasses.replace(self.themen[index], **felder)
         self.themen[index] = neu
         self.plan = self.plan_modell = None
+
+    def personen_namen(self) -> list[str]:
+        return [p.name for p in self.ergebnis.personen] if self.ergebnis else []
 
     def erzeuge_zeitslots(self, tage: str, beginn: time, ende: time, laenge_min: int) -> list[Zeitslot]:
         slots = erzeuge_slots([t for t in tage.split(",")], beginn, ende, laenge_min)

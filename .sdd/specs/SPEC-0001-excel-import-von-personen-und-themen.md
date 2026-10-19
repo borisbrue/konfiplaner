@@ -56,7 +56,7 @@ KonfiPlaner stellt Personen zu Terminen zusammen. Die Eingangsdaten liegen bei d
 
 - **FR-01:** Der Import liest das Blatt `Personen` (Pflicht) sowie `Themen`, `Zeitslots` und optional `Verfügbarkeiten`. Fehlen `Themen` oder `Zeitslots` in der Datei, werden diese Daten über die GUI (SPEC-0005) ergänzt.
 - **FR-02:** `Personen` enthält je Zeile: Name, Thema 1, Thema 2 (beide Pflicht, verschieden). Das ist das Minimalformat der Beispieldatei.
-- **FR-03:** `Themen` enthält je Zeile: Name (eindeutig), Wichtigkeit (ganzzahlig, 1 = unwichtig … 5 = sehr wichtig), Mindestanzahl, Dauer in Minuten.
+- **FR-03:** `Themen` enthält je Zeile: Name (eindeutig), Wichtigkeit (ganzzahlig, 1 = unwichtig … 5 = sehr wichtig), Mindestanzahl, Dauer in Minuten und optional Vorsitz (SPEC-0006 FR-06).
 - **FR-04:** `Zeitslots` enthält je Zeile: Tag, Start, Ende. `Verfügbarkeiten` hat je Zeile Person, Tag, Start und nennt die Slots, in denen die Person kann (Slot = Tag + Start); Personen ohne Zeile und ein fehlendes Blatt bedeuten „jederzeit verfügbar". Verfügbarkeiten setzen das Blatt `Zeitslots` voraus.
 - **FR-05:** Das Themenset ergibt sich aus `Themen`; fehlt das Blatt, aus den in `Personen` genannten Themen (dann mit Standardwerten, in der GUI anpassbar). Unbekannte Themen bei vorhandenem Blatt `Themen` sind ein Fehler.
 - **FR-06:** Spaltenüberschriften werden unabhängig von Groß-/Kleinschreibung und Leerzeichen erkannt; die Spaltenzuordnung ist konfigurierbar.
@@ -129,3 +129,4 @@ Feature: Excel-Import
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
 | 2026-10-19 | 0.2.0   | Boris Brünen | Klärung: Mindestanzahl, Wichtigkeit, Excel-Layout, anpassbare Grundregeln |
 | 2026-10-19 | 0.3.0   | Boris Brünen | SOLID-Review: Abhängigkeitsrichtung und Abstraktionen präzisiert |
+| 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0006 (Vorsitz), Version unverändert |

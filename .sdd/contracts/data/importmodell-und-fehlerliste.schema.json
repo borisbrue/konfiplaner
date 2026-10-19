@@ -109,6 +109,10 @@
               "dauer_min": {
                 "type": "integer",
                 "minimum": 1
+              },
+              "vorsitz": {
+                "type": "string",
+                "minLength": 1
               }
             }
           }

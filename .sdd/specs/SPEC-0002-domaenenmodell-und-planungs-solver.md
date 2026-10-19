@@ -71,9 +71,9 @@ Kern von KonfiPlaner: aus Personen, Themen und Zeitslots einen Terminplan berech
 
 - **FR-01 (Modell):** Domänenobjekte `Thema` (Name, Wichtigkeit, Mindestanzahl, Dauer), `Person` (Name, genau 2 Schwerpunktthemen, Verfügbarkeit), `Zeitslot`, `Termin` (Thema, Slot(s), Teilnehmer), `Plan`.
 - **FR-02 (Themenabdeckung):** Jedes Thema findet statt. Es darf genau einen Termin je Thema geben; mehr sind möglich, aber nicht erforderlich. Kein Thema darf entfallen (hart, aber über SPEC-0003 anpassbar).
-- **FR-03 (Mindestanzahl):** `Mindestanzahl` ist die Mindest-Teilnehmerzahl pro Termin; jeder Termin des Themas erreicht sie (hart, anpassbar).
+- **FR-03 (Mindestanzahl):** `Mindestanzahl` ist die Mindest-Teilnehmerzahl pro Termin (der Vorsitz zählt mit, SPEC-0006); jeder Termin des Themas erreicht sie (hart, anpassbar).
 - **FR-04 (Dauer):** Ein Termin belegt aufeinanderfolgende Slots, die mindestens die Themendauer abdecken. Der Startslot je Termin ist die zentrale Stellgröße des Solvers.
-- **FR-05 (Schwerpunkte):** Jede Person wird mindestens einem Termin je Schwerpunktthema zugeordnet (hart, sofern verfügbar).
+- **FR-05 (Schwerpunkte):** Jede Person wird mindestens einem Termin je Schwerpunktthema zugeordnet (hart, sofern verfügbar). Seit SPEC-0006 nimmt außerdem der Vorsitz eines Themas an dessen Terminen teil, auch ohne Schwerpunkt; er ist in jedem Termin des Themas, die Regel „höchstens ein Termin je Person und Thema" gilt für ihn nicht.
 - **FR-06 (Keine Überschneidung):** Eine Person nimmt nie an zwei zeitlich überlappenden Terminen teil (hart).
 - **FR-07 (Wichtigkeit):** Wichtigkeit ist ein Gewicht in der Zielfunktion. Bei Konflikten (z. B. überlappende Schwerpunkttermine einer Person) wird zuerst über die Zeitslots der Termine verhandelt: wichtige Themen bekommen bevorzugte Slots und möglichst vollständige Teilnahme, unwichtige Themen weichen aus. Ein Thema entfällt nie.
 - **FR-08 (Restriktionen):** Alle Bedingungen werden über die Restriktions-Schnittstelle aus SPEC-0003 eingebunden, nicht fest im Solver verdrahtet.
@@ -151,3 +151,4 @@ Feature: Planung
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
 | 2026-10-19 | 0.2.0   | Boris Brünen | Klärung: Mindestanzahl, Wichtigkeit, Excel-Layout, anpassbare Grundregeln |
 | 2026-10-19 | 0.3.0   | Boris Brünen | SOLID-Review: Abhängigkeitsrichtung und Abstraktionen präzisiert |
+| 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0006 (Vorsitz), Version unverändert |

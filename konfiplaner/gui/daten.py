@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
 
 from konfiplaner.anwendung import Sitzung
 from konfiplaner.excel_import import ImportDateiFehler, finde_spalte, rohdaten
-from konfiplaner.gui.modelle import FEHLER_FARBE, HINWEIS_FARBE, TabellenModell, ThemenModell
+from konfiplaner.gui.modelle import FEHLER_FARBE, HINWEIS_FARBE, TabellenModell, ThemenModell, VorsitzDelegate
 from konfiplaner.modell import ModellFehler
 
 MELDUNGS_KOPF = ["Schwere", "Blatt", "Zeile", "Spalte", "Meldung"]
@@ -82,9 +82,12 @@ class DatenSeite(QWidget):
         self.themen.abgelehnt.connect(self.hinweis)
         self.themen.geaendert.connect(self.daten_geaendert)
         self.themen_tabelle = _tabelle(self.themen, "Themenwerte")
+        self.themen_tabelle.setItemDelegateForColumn(4, VorsitzDelegate(sitzung, self.themen_tabelle))
         themen = QWidget()
         t = QVBoxLayout(themen)
-        t.addWidget(QLabel("Wichtigkeit, Mindestanzahl und Dauer lassen sich durch Doppelklick ändern."))
+        t.addWidget(
+            QLabel("Wichtigkeit, Mindestanzahl, Dauer und Vorsitz lassen sich durch Doppelklick ändern.")
+        )
         t.addWidget(self.themen_tabelle)
 
         self.slots = TabellenModell(["Tag", "Start", "Ende"])

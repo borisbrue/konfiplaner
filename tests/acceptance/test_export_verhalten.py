@@ -45,7 +45,15 @@ def test_termine_mit_zeit_und_teilnehmenden(tmp_path, m, plan):
     ziel = tmp_path / "plan.xlsx"
     exportiere(plan, m, ziel)
     erste = zeilen(ziel, "Termine")[0]
-    assert erste == ["Mo", time(8, 45), time(10, 15), "Taufe", 2, "Anna, Ben"]
+    assert erste == [
+        "Mo",
+        time(8, 45),
+        time(10, 15),
+        "Taufe",
+        None,
+        2,
+        "Anna, Ben",
+    ]  # leerer Vorsitz = leere Zelle
 
 
 def test_themenauslastung(tmp_path, m, plan):

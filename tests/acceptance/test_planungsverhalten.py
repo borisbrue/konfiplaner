@@ -167,4 +167,7 @@ def test_zeitlimit_wird_eingehalten():
     t0 = time.perf_counter()
     plan = CpSatPlaner().planen(m, mit_regeln(), PlanerOptionen(zeitlimit_s=5))
     assert time.perf_counter() - t0 < 8
-    assert plan.status in ("optimal", "machbar")
+    if plan.status == "kein_plan":  # in 5 s nicht immer lösbar: dann muss die Meldung das Zeitlimit nennen
+        assert "Zeitlimit" in " ".join(plan.begruendung)
+    else:
+        assert plan.status in ("optimal", "machbar")

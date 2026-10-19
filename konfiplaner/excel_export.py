@@ -17,8 +17,8 @@ from openpyxl.worksheet.worksheet import Worksheet
 from konfiplaner.modell import Modell, Plan, Termin
 
 SPALTEN: dict[str, list[str]] = {
-    "Termine": ["Tag", "Start", "Ende", "Thema", "Teilnehmerzahl", "Teilnehmende"],
-    "Personen": ["Name", "Tag", "Start", "Ende", "Thema"],
+    "Termine": ["Tag", "Start", "Ende", "Thema", "Vorsitz", "Teilnehmerzahl", "Teilnehmende"],
+    "Personen": ["Name", "Tag", "Start", "Ende", "Thema", "Rolle"],
     "Themen": ["Thema", "Wichtigkeit", "Mindestanzahl", "Teilnehmerzahl", "Erfüllt"],
     "Hinweise": ["Art", "Text"],
 }
@@ -69,12 +69,14 @@ def tabellen(plan: Plan, modell: Modell) -> dict[str, list[list]]:
     termine, personen, themen, hinweise = [], [], [], []
     for t in geordnet:
         tag, start, ende = _zeit(modell, t)
-        termine.append([tag, start, ende, t.thema, len(t.teilnehmer), ", ".join(t.teilnehmer)])
+        vorsitz = modell.thema(t.thema).vorsitz or ""
+        termine.append([tag, start, ende, t.thema, vorsitz, len(t.teilnehmer), ", ".join(t.teilnehmer)])
     for p in modell.personen:
         for t in geordnet:
             if p.name in t.teilnehmer:
                 tag, start, ende = _zeit(modell, t)
-                personen.append([p.name, tag, start, ende, t.thema])
+                rolle = "Vorsitz" if modell.thema(t.thema).vorsitz == p.name else "Teilnahme"
+                personen.append([p.name, tag, start, ende, t.thema, rolle])
     for th in modell.themen:
         eigene = [t for t in plan.termine if t.thema == th.name]
         erfuellt = bool(eigene) and all(len(t.teilnehmer) >= th.mindestanzahl for t in eigene)

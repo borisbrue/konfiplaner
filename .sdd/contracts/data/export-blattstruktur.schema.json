@@ -18,6 +18,7 @@
         "Start",
         "Ende",
         "Thema",
+        "Vorsitz",
         "Teilnehmerzahl",
         "Teilnehmende"
       ]
@@ -28,7 +29,8 @@
         "Tag",
         "Start",
         "Ende",
-        "Thema"
+        "Thema",
+        "Rolle"
       ]
     },
     "Themen": {

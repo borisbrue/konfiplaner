@@ -53,10 +53,12 @@ class Schwerpunkte(Restriktion):
     def anwenden(self, ctx: Planungskontext, werte: dict[str, Any]) -> None:
         for p in ctx.modell.personen:
             for t in p.themen:
+                # Der Vorsitz ist in allen Terminen seines Themas; hier genügt mindestens einer
+                obergrenze = None if ctx.modell.thema(t).vorsitz == p.name else 1
                 ctx.bedingung(
                     [(1, ctx.teilnahme(p.name, t, j)) for j in ctx.termine(t)],
                     1,
-                    1,
+                    obergrenze,
                     f"{p.name} nimmt nicht an Schwerpunkt {t} teil",
                 )
 
@@ -69,7 +71,11 @@ class KeineUeberschneidung(Restriktion):
     def anwenden(self, ctx: Planungskontext, werte: dict[str, Any]) -> None:
         for p in ctx.modell.personen:
             for s in range(len(ctx.modell.zeitslots)):
-                terme = [(1, ctx.praesenz(p.name, t, j, s)) for t in p.themen for j in ctx.termine(t)]
+                terme = [
+                    (1, ctx.praesenz(p.name, t, j, s))
+                    for t in ctx.modell.themen_von(p.name)
+                    for j in ctx.termine(t)
+                ]
                 ctx.bedingung(terme, None, 1, f"{p.name} hat im Slot {s} zwei Termine gleichzeitig")
 
 
@@ -86,8 +92,31 @@ class Verfuegbarkeit(Restriktion):
             for s in range(len(modell.zeitslots)):
                 if modell.verfuegbar(p.name, s):
                     continue
-                terme = [(1, ctx.praesenz(p.name, t, j, s)) for t in p.themen for j in ctx.termine(t)]
+                terme = [
+                    (1, ctx.praesenz(p.name, t, j, s))
+                    for t in ctx.modell.themen_von(p.name)
+                    for j in ctx.termine(t)
+                ]
                 ctx.bedingung(terme, None, 0, f"{p.name} ist im Slot {s} nicht verfügbar")
+
+
+@restriktion
+class Vorsitz(Restriktion):
+    name = "vorsitz"
+    beschreibung = "Der Vorsitz eines Themas ist in jedem Termin dieses Themas."
+
+    def anwenden(self, ctx: Planungskontext, werte: dict[str, Any]) -> None:
+        for t in ctx.modell.themen:
+            if t.vorsitz is None:
+                continue
+            for j in ctx.termine(t.name):
+                # Teilnahme == aktiv: der Vorsitz ist genau dann dabei, wenn der Termin stattfindet
+                ctx.bedingung(
+                    [(1, ctx.teilnahme(t.vorsitz, t.name, j)), (-1, ctx.aktiv(t.name, j))],
+                    0,
+                    0,
+                    f"Vorsitz {t.vorsitz} fehlt im Thema {t.name}",
+                )
 
 
 @restriktion
@@ -113,5 +142,6 @@ GRUNDREGELN = (
     "schwerpunkte",
     "keine_ueberschneidung",
     "verfuegbarkeit",
+    "vorsitz",
     "wichtigkeit",
 )

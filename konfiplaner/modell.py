@@ -17,6 +17,7 @@ class Thema:
     wichtigkeit: int = 3
     mindestanzahl: int = 1
     dauer_min: int = 45
+    vorsitz: str | None = None  # Name einer Person; muss in jedem Termin des Themas sein
 
     def __post_init__(self) -> None:
         if not self.name.strip():
@@ -78,6 +79,9 @@ class Modell:
             for t in p.themen:
                 if t not in namen:
                     raise ModellFehler(f"Person {p.name}: unbekanntes Thema {t}")
+        for t in self.themen:
+            if t.vorsitz is not None and t.vorsitz not in personen:
+                raise ModellFehler(f"Thema {t.name}: unbekannter Vorsitz {t.vorsitz}")
         for name, slots in self.verfuegbarkeit.items():
             if name not in personen:
                 raise ModellFehler(f"Verfügbarkeit für unbekannte Person {name}")
@@ -88,7 +92,14 @@ class Modell:
         return next(t for t in self.themen if t.name == name)
 
     def personen_zu(self, thema: str) -> list[Person]:
-        return [p for p in self.personen if thema in p.themen]
+        """Personen, die an Terminen des Themas teilnehmen können: Schwerpunkt oder Vorsitz."""
+        vorsitz = self.thema(thema).vorsitz
+        return [p for p in self.personen if thema in p.themen or p.name == vorsitz]
+
+    def themen_von(self, person: str) -> list[str]:
+        """Themen, in denen die Person Termine hat: Schwerpunkte und Themen mit ihr als Vorsitz."""
+        p = next(x for x in self.personen if x.name == person)
+        return [t.name for t in self.themen if t.name in p.themen or t.vorsitz == person]
 
     def verfuegbar(self, person: str, slot: int) -> bool:
         erlaubt = self.verfuegbarkeit.get(person)

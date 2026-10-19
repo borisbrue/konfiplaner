@@ -49,8 +49,8 @@ Der berechnete Plan muss weitergegeben werden. Da die Eingaben in Excel vorliege
 
 ## 4. Funktionale Anforderungen
 
-- **FR-01:** Blatt `Termine`: eine Zeile je Termin (Tag, Start, Ende, Thema, Teilnehmerzahl, Teilnehmende).
-- **FR-02:** Blatt `Personen`: je Person ihre Termine in zeitlicher Reihenfolge.
+- **FR-01:** Blatt `Termine`: eine Zeile je Termin (Tag, Start, Ende, Thema, Vorsitz, Teilnehmerzahl, Teilnehmende).
+- **FR-02:** Blatt `Personen`: je Person ihre Termine in zeitlicher Reihenfolge, mit Rolle (`Vorsitz` oder `Teilnahme`, SPEC-0006 FR-07).
 - **FR-03:** Blatt `Themen`: Auslastung je Thema gegenüber Mindestanzahl, Kennzeichnung von Wichtigkeit.
 - **FR-04:** Blatt `Hinweise`: Warnungen, verletzte weiche Restriktionen, Kennzeichen „nicht optimal".
 - **FR-06 (Abhängigkeit):** Der Export liest nur den solver-unabhängigen `Plan` (CON-0003) inklusive Status, Verstößen und Begründungen, nie Solver-Interna.
@@ -103,3 +103,4 @@ Feature: Export
 |------------|---------|--------------|---------------------|
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
 | 2026-10-19 | 0.3.0   | Boris Brünen | SOLID-Review: Abhängigkeitsrichtung und Abstraktionen präzisiert |
+| 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0006 (Vorsitz), Version unverändert |

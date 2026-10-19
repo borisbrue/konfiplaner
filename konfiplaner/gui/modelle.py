@@ -6,8 +6,16 @@ from collections.abc import Callable
 from datetime import time
 from typing import Any
 
-from PySide6.QtCore import QAbstractTableModel, QModelIndex, QPersistentModelIndex, Qt, Signal
+from PySide6.QtCore import (
+    QAbstractItemModel,
+    QAbstractTableModel,
+    QModelIndex,
+    QPersistentModelIndex,
+    Qt,
+    Signal,
+)
 from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QComboBox, QStyledItemDelegate, QStyleOptionViewItem, QWidget
 
 from konfiplaner.anwendung import Sitzung
 from konfiplaner.modell import ModellFehler
@@ -74,8 +82,8 @@ class TabellenModell(QAbstractTableModel):
 class ThemenModell(QAbstractTableModel):
     """Themenwerte der Sitzung; Wichtigkeit, Mindestanzahl und Dauer sind bearbeitbar (SPEC-0005 FR-10)."""
 
-    KOPF = ("Thema", "Wichtigkeit (1–5)", "Mindestanzahl", "Dauer (Minuten)")
-    FELDER = (None, "wichtigkeit", "mindestanzahl", "dauer_min")
+    KOPF = ("Thema", "Wichtigkeit (1–5)", "Mindestanzahl", "Dauer (Minuten)", "Vorsitz")
+    FELDER = (None, "wichtigkeit", "mindestanzahl", "dauer_min", "vorsitz")
     abgelehnt = Signal(str)
     geaendert = Signal()
 
@@ -99,7 +107,7 @@ class ThemenModell(QAbstractTableModel):
         if not index.isValid():
             return None
         t = self._sitzung.themen[index.row()]
-        wert = (t.name, t.wichtigkeit, t.mindestanzahl, t.dauer_min)[index.column()]
+        wert = (t.name, t.wichtigkeit, t.mindestanzahl, t.dauer_min, t.vorsitz or "")[index.column()]
         if role in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole):
             return str(wert)
         return None
@@ -115,7 +123,8 @@ class ThemenModell(QAbstractTableModel):
         if role != Qt.ItemDataRole.EditRole or feld is None:
             return False
         try:
-            self._sitzung.setze_thema(index.row(), **{feld: int(str(value).strip())})
+            eingabe = str(value).strip() if feld == "vorsitz" else int(str(value).strip())
+            self._sitzung.setze_thema(index.row(), **{feld: eingabe})
         except (ValueError, ModellFehler) as e:
             self.abgelehnt.emit(str(e) if isinstance(e, ModellFehler) else "Bitte eine ganze Zahl eingeben")
             return False
@@ -129,3 +138,31 @@ class ThemenModell(QAbstractTableModel):
         if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Horizontal:
             return self.KOPF[section]
         return None
+
+
+class VorsitzDelegate(QStyledItemDelegate):
+    """Auswahl des Vorsitzes aus den Personen (oder „keiner") statt freier Texteingabe."""
+
+    def __init__(self, sitzung: Sitzung, eltern: QWidget | None = None) -> None:
+        super().__init__(eltern)
+        self._sitzung = sitzung
+
+    def createEditor(
+        self, parent: QWidget, option: QStyleOptionViewItem, index: QModelIndex | QPersistentModelIndex
+    ) -> QWidget:
+        box = QComboBox(parent)
+        box.setAccessibleName("Vorsitz")
+        box.addItem("(keiner)", "")
+        for name in self._sitzung.personen_namen():
+            box.addItem(name, name)
+        return box
+
+    def setEditorData(self, editor: QWidget, index: QModelIndex | QPersistentModelIndex) -> None:
+        if isinstance(editor, QComboBox):
+            editor.setCurrentIndex(max(0, editor.findData(index.data(Qt.ItemDataRole.EditRole) or "")))
+
+    def setModelData(
+        self, editor: QWidget, model: QAbstractItemModel, index: QModelIndex | QPersistentModelIndex
+    ) -> None:
+        if isinstance(editor, QComboBox):
+            model.setData(index, editor.currentData(), Qt.ItemDataRole.EditRole)

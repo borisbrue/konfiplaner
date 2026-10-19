@@ -30,8 +30,8 @@ Diese Regeln MÜSSEN für jede gültige Instanz gelten:
 **Gültig:**
 ```json
 {
-  "Termine": ["Tag", "Start", "Ende", "Thema", "Teilnehmerzahl", "Teilnehmende"],
-  "Personen": ["Name", "Tag", "Start", "Ende", "Thema"],
+  "Termine": ["Tag", "Start", "Ende", "Thema", "Vorsitz", "Teilnehmerzahl", "Teilnehmende"],
+  "Personen": ["Name", "Tag", "Start", "Ende", "Thema", "Rolle"],
   "Themen": ["Thema", "Wichtigkeit", "Mindestanzahl", "Teilnehmerzahl", "Erfüllt"],
   "Hinweise": ["Art", "Text"]
 }
