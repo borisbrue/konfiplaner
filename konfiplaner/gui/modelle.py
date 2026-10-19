@@ -18,11 +18,24 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QComboBox, QStyledItemDelegate, QStyleOptionViewItem, QWidget
 
 from konfiplaner.anwendung import Sitzung
+from konfiplaner.gui.design import DUNKEL
 from konfiplaner.modell import ModellFehler
 
 LEER = QModelIndex()
-HINWEIS_FARBE = QColor(255, 170, 0, 70)
-FEHLER_FARBE = QColor(220, 50, 50, 70)
+
+
+def _tint(hex_: str, alpha: int) -> QColor:
+    c = QColor(hex_)
+    c.setAlpha(alpha)
+    return c
+
+
+# Zeilenhinterlegung: Koralle für Konflikte und Hinweise, Rose für Fehler (immer mit Text daneben)
+HINWEIS_FARBE = _tint(DUNKEL.konflikt, 58)
+FEHLER_FARBE = _tint(DUNKEL.fehler, 62)
+TEXT_HINWEIS = QColor(DUNKEL.konflikt)
+TEXT_FEHLER = QColor(DUNKEL.fehler)
+TEXT_OK = QColor(DUNKEL.ok)
 
 
 def formatiere(wert: Any) -> str:
@@ -39,9 +52,11 @@ class TabellenModell(QAbstractTableModel):
         kopf: list[str],
         zeilen: list[list] | None = None,
         faerbung: Callable[[list], QColor | None] | None = None,
+        schrift: Callable[[list, int], QColor | None] | None = None,
     ) -> None:
         super().__init__()
         self._kopf, self._zeilen, self._faerbung = kopf, zeilen or [], faerbung
+        self._schrift = schrift  # Textfarbe je Zelle (Status in Farbe, immer zusätzlich als Text)
 
     def setze(self, zeilen: list[list], kopf: list[str] | None = None) -> None:
         self.beginResetModel()
@@ -66,6 +81,12 @@ class TabellenModell(QAbstractTableModel):
             return formatiere(zeile[index.column()]) if index.column() < len(zeile) else ""
         if role == Qt.ItemDataRole.BackgroundRole and self._faerbung:
             return self._faerbung(zeile)
+        if role == Qt.ItemDataRole.ForegroundRole and self._schrift:
+            return self._schrift(zeile, index.column())
+        if role == Qt.ItemDataRole.TextAlignmentRole and index.column() < len(zeile):
+            wert = zeile[index.column()]
+            if isinstance(wert, (int, float)) and not isinstance(wert, bool):
+                return int(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         return None
 
     def headerData(
@@ -73,6 +94,16 @@ class TabellenModell(QAbstractTableModel):
     ) -> Any:
         if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Horizontal:
             return self._kopf[section]
+        if role == Qt.ItemDataRole.TextAlignmentRole and orientation == Qt.Orientation.Horizontal:
+            zahlen = bool(self._zeilen) and all(
+                isinstance(z[section], int) and not isinstance(z[section], bool)
+                for z in self._zeilen
+                if section < len(z)
+            )
+            return int(
+                (Qt.AlignmentFlag.AlignRight if zahlen else Qt.AlignmentFlag.AlignLeft)
+                | Qt.AlignmentFlag.AlignVCenter
+            )
         return None
 
     def zeilen(self) -> list[list]:

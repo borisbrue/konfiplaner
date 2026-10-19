@@ -159,8 +159,7 @@ def test_planung_abbrechen_haelt_gui_bedienbar(qtbot, tmp_path):
 def test_regel_anpassen_wirkt_auf_die_planung(qtbot, tmp_path):
     f, _ = fenster(qtbot, tmp_path, {"Personen": PERSONEN_VIELE, "Zeitslots": SLOTS})
     f.datei_oeffnen()
-    zeile = f.regeln._zeile("schwerpunkte")
-    box, gewicht = f.regeln.tabelle.cellWidget(zeile, 1), f.regeln.tabelle.cellWidget(zeile, 2)
+    box, gewicht = f.regeln.typ_auswahl("schwerpunkte"), f.regeln.gewichtsfeld("schwerpunkte")
     assert not gewicht.isEnabled()
     box.setCurrentIndex(box.findData("weich"))
     gewicht.setValue(4)
@@ -178,13 +177,14 @@ def test_einstellungen_werden_wiederhergestellt(qtbot, tmp_path):
         einstellungen=YamlEinstellungen(speicher),
     )
     f.datei_oeffnen()
-    box = f.regeln.tabelle.cellWidget(f.regeln._zeile("schwerpunkte"), 1)
+    box = f.regeln.typ_auswahl("schwerpunkte")
     box.setCurrentIndex(box.findData("weich"))
     f.close()
 
     neu = Hauptfenster(Sitzung(YamlEinstellungen(speicher)), FakeDialoge())
     qtbot.addWidget(neu)
-    assert neu.sitzung.datei == d.datei and str(d.datei) in neu.daten.pfad.text()
+    assert neu.sitzung.datei == d.datei and d.datei.name in neu.daten.pfad.text()
+    assert neu.daten.pfad.toolTip() == str(d.datei)
     assert {r.name: r for r in neu.sitzung.regeln()}["schwerpunkte"].typ == "weich"
     assert neu.reiter.currentIndex() == SEITE_PLANEN  # Datei wurde wieder geladen
 
@@ -413,8 +413,7 @@ def test_gui_plant_gleichzeitige_konferenzen_und_zeigt_konflikte(qtbot, tmp_path
     assert ["Verstoß", "schwerpunkte: Anna Eins nimmt nicht an Schwerpunkt Sport teil"] in hinweise
     assert "1 Verstöße" in f.ergebnis.status.text()
     # Regel zeigt sich in der Regelverwaltung als weich (Profil), ohne dass jemand sie gesetzt hat
-    zeile = f.regeln._zeile("schwerpunkte")
-    assert f.regeln.tabelle.cellWidget(zeile, 1).currentData() == "weich"
+    assert f.regeln.typ_auswahl("schwerpunkte").currentData() == "weich"
 
 
 def test_gui_ohne_konferenzblatt_hat_keinen_termine_reiter(qtbot, tmp_path):

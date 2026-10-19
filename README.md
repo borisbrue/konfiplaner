@@ -13,6 +13,12 @@ uv run konfiplaner        # Desktop-Oberfläche
 uv run pytest             # Tests (Performance-Test: uv run pytest -m performance)
 ```
 
+## Oberfläche
+
+Dunkles Design („Schiefertafel bei Abendlicht"): Die Schritte stehen links in einer Seitenleiste mit Kurzstatus
+(Strg+1 bis Strg+6 wechselt die Seite), jede Fachkonferenz hat in allen Ansichten ihre eigene Fachfarbe, eine
+`.xlsx`-Datei lässt sich auf das Fenster ziehen. Schrift: Atkinson Hyperlegible Next (SIL OFL, im Paket enthalten).
+
 ## Excel-Eingabe
 
 Pflicht ist das Blatt `Personen` mit den Spalten `Name`, `Thema 1`, `Thema 2`. Optional:

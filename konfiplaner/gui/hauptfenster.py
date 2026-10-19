@@ -5,19 +5,21 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QEvent
-from PySide6.QtGui import QAction, QKeySequence
-from PySide6.QtWidgets import QMainWindow, QTabWidget
+from PySide6.QtGui import QAction, QKeySequence, QShortcut
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QTabWidget, QVBoxLayout, QWidget
 
 from konfiplaner.anwendung import Sitzung
 from konfiplaner.excel_export import ExportFehler, ZielDateiExistiertFehler
 from konfiplaner.excel_import import ImportDateiFehler
 from konfiplaner.gui.daten import DatenSeite
+from konfiplaner.gui.design import registriere_fachfarben
 from konfiplaner.gui.dialoge import Dialoge
 from konfiplaner.gui.ergebnis import ErgebnisSeite
 from konfiplaner.gui.konferenzen import KonferenzenSeite
 from konfiplaner.gui.lehrkraefte import LehrkraefteSeite
 from konfiplaner.gui.planen import PlanenSeite
 from konfiplaner.gui.regeln import RegelnSeite
+from konfiplaner.gui.seitenleiste import AKTUELL, FERTIG, GESPERRT, OFFEN, Seitenleiste
 from konfiplaner.modell import Plan
 
 (
@@ -28,6 +30,36 @@ from konfiplaner.modell import Plan
     SEITE_PLANEN,
     SEITE_ERGEBNIS,
 ) = range(6)
+
+
+SCHRITTE = (
+    ("Daten", "Daten laden", "Excel-Liste öffnen, Fehler prüfen und Konferenznamen vereinheitlichen."),
+    (
+        "Konferenzen",
+        "Konferenzen auswählen",
+        "Nur ausgewählte Konferenzen werden geplant. Wer eine verliert, behält die übrigen.",
+    ),
+    (
+        "Lehrkräfte",
+        "Lehrkräfte zuordnen",
+        "Konferenzen, Rangfolge und Termine ändern, danach nur die Geänderten neu verplanen.",
+    ),
+    ("Regeln", "Planungsregeln", "Legt fest, was gelten muss und was nur gelten soll."),
+    ("Planen", "Plan berechnen", "Berechnet, wer an welcher Konferenz teilnimmt."),
+    ("Ergebnis", "Ergebnis prüfen", "Plan nach Termin, Person und Thema ansehen und als Excel exportieren."),
+)
+
+
+class Seitenstapel(QTabWidget):
+    """Die Seiten des Ablaufs; die Tab-Leiste ist versteckt, die Seitenleiste übernimmt (SPEC-0011 FR-05)."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setObjectName("seiten")
+        self.tabBar().hide()
+        self.setDocumentMode(True)
+        # Tabellen scrollen selbst; so bleibt das Fenster ab 1024×600 bedienbar (SPEC-0011 FR-12)
+        self.setMinimumSize(520, 240)
 
 
 class Hauptfenster(QMainWindow):
@@ -45,21 +77,48 @@ class Hauptfenster(QMainWindow):
         self.regeln = RegelnSeite(sitzung, self.dialoge)
         self.planen = PlanenSeite(sitzung)
         self.ergebnis = ErgebnisSeite(sitzung)
-        self.reiter = QTabWidget()
-        self.reiter.addTab(self.daten, "1  Daten")
-        self.reiter.addTab(self.konferenzen, "2  Konferenzen")
-        self.reiter.addTab(self.lehrkraefte, "3  Lehrkräfte")
-        self.reiter.addTab(self.regeln, "4  Regeln")
-        self.reiter.addTab(self.planen, "5  Planen")
-        self.reiter.addTab(self.ergebnis, "6  Ergebnis")
-        self.setCentralWidget(self.reiter)
+        self.reiter = Seitenstapel()
+        for seite, (kurz, _titel, _hilfe) in zip(
+            (self.daten, self.konferenzen, self.lehrkraefte, self.regeln, self.planen, self.ergebnis),
+            SCHRITTE,
+            strict=True,
+        ):
+            self.reiter.addTab(seite, kurz)
+
+        self.leiste = Seitenleiste([k for k, _, _ in SCHRITTE])
+        self.leiste.gewaehlt.connect(self._waehle_seite)
+        self.seitentitel = QLabel("")
+        self.seitentitel.setObjectName("seitentitel")
+        self.seitenhilfe = QLabel("")
+        self.seitenhilfe.setObjectName("seitenhilfe")
+        self.seitenhilfe.setWordWrap(True)
+        rechts = QVBoxLayout()
+        rechts.setContentsMargins(30, 26, 30, 10)
+        rechts.setSpacing(2)
+        rechts.addWidget(self.seitentitel)
+        rechts.addWidget(self.seitenhilfe)
+        rechts.addSpacing(14)
+        rechts.addWidget(self.reiter, 1)
+        zentrum = QWidget()
+        zentrum.setObjectName("seite")
+        huelle = QHBoxLayout(zentrum)
+        huelle.setContentsMargins(0, 0, 0, 0)
+        huelle.setSpacing(0)
+        huelle.addWidget(self.leiste)
+        huelle.addLayout(rechts, 1)
+        self.setCentralWidget(zentrum)
+        self.setAcceptDrops(True)
+        self.statusBar().setSizeGripEnabled(False)
+        self.reiter.currentChanged.connect(lambda _i: self._aktualisiere_leiste())
+        for i in range(len(SCHRITTE)):
+            QShortcut(QKeySequence(f"Ctrl+{i + 1}"), self, activated=lambda i=i: self._waehle_seite(i))
 
         self._menue()
         self.daten.oeffnen.clicked.connect(self.datei_oeffnen)
         self.daten.neu_laden.clicked.connect(self.neu_laden)
         self.daten.daten_geaendert.connect(self._daten_geaendert)
         for seite in (self.daten, self.konferenzen, self.lehrkraefte, self.regeln, self.planen):
-            seite.hinweis.connect(self.statusBar().showMessage)
+            seite.hinweis.connect(self._hinweis)
         self.konferenzen.auswahl_geaendert.connect(self._auswahl_geaendert)
         self.lehrkraefte.aenderung.connect(self._zuordnung_geaendert)
         self.lehrkraefte.neu_planen_gewuenscht.connect(self._neu_planen)
@@ -97,6 +156,83 @@ class Hauptfenster(QMainWindow):
         self.aktion_export.setEnabled(self.sitzung.plan is not None and not laeuft)
         self.aktion_oeffnen.setEnabled(not laeuft)
         self.planen.aktualisieren()
+        self._aktualisiere_leiste()
+
+    def _hinweis(self, text: str) -> None:
+        self.statusBar().showMessage(text)
+        self._aktualisiere_leiste()
+
+    def _waehle_seite(self, i: int) -> None:
+        if self.reiter.isTabEnabled(i):
+            self.reiter.setCurrentIndex(i)
+
+    def _kurzstatus(self) -> list[str]:
+        """Eine kurze Zeile je Schritt (SPEC-0011 FR-05)."""
+        s = self.sitzung
+        erg = s.ergebnis
+        if erg is None:
+            return [
+                "Noch keine Datei",
+                "Zuerst Datei laden",
+                "Zuerst Datei laden",
+                "Zuerst Datei laden",
+                "Zuerst Datei laden",
+                "Noch kein Plan",
+            ]
+        konferenzen = s.konferenzen()
+        ansicht = s.lehrkraefte()
+        markiert = sum(1 for a in ansicht if a.markiert)
+        geaendert = sum(1 for a in ansicht if a.geaendert)
+        if markiert:
+            lehrer = f"{markiert} neu zu verplanen"
+        elif s.neu_zuordnen:
+            lehrer = f"{len(s.neu_zuordnen)} neu zuordnen"
+        else:
+            lehrer = f"{geaendert} geändert" if geaendert else "Unverändert"
+        regeln = s.regeln()
+        hart, weich = sum(r.typ == "hart" for r in regeln), sum(r.typ == "weich" for r in regeln)
+        if self.planen.laeuft:
+            planen = "Läuft …"
+        elif not s.planbar:
+            planen = "Noch nicht möglich"
+        else:
+            planen = "Plan berechnet" if s.plan is not None else "Bereit"
+        ergebnis = (
+            {"optimal": "Optimal", "machbar": "Nicht optimal", "kein_plan": "Kein Plan"}[s.plan.status]
+            if s.plan is not None
+            else "Noch kein Plan"
+        )
+        daten = f"{len(erg.personen)} Lehrkräfte" + (f", {len(erg.fehler)} Fehler" if erg.fehler else "")
+        return [
+            daten,
+            f"{sum(k.ausgewaehlt for k in konferenzen)} von {len(konferenzen)} ausgewählt",
+            lehrer,
+            f"{hart} hart, {weich} weich",
+            planen,
+            ergebnis,
+        ]
+
+    def _aktualisiere_leiste(self) -> None:
+        """Seitenleiste und Seitenkopf folgen dem Zustand der Sitzung."""
+        aktuell = self.reiter.currentIndex()
+        fertig = {
+            SEITE_DATEN: self.sitzung.ergebnis is not None and not self.sitzung.ergebnis.fehler,
+            SEITE_PLANEN: self.sitzung.plan is not None,
+            SEITE_ERGEBNIS: self.sitzung.plan is not None,
+        }
+        for i, text in enumerate(self._kurzstatus()):
+            if not self.reiter.isTabEnabled(i):
+                zustand = GESPERRT
+            elif i == aktuell:
+                zustand = AKTUELL
+            else:
+                zustand = FERTIG if fertig.get(i) else OFFEN
+            self.leiste.setze_schritt(i, text, zustand)
+        _kurz, titel, hilfe = SCHRITTE[aktuell]
+        self.seitentitel.setText(titel)
+        self.seitenhilfe.setText(hilfe)
+        datei = self.sitzung.datei
+        self.leiste.setze_datei(datei.name if datei and self.sitzung.ergebnis else "Keine Datei geladen")
 
     def _daten_geaendert(self) -> None:
         self.konferenzen.aktualisieren()
@@ -155,6 +291,7 @@ class Hauptfenster(QMainWindow):
                 self.dialoge.fehler("Datei laden", str(e))
             return
         self._gemeldete_aenderung = None
+        registriere_fachfarben([t.name for t in self.sitzung.themen])
         self.regeln.aktualisieren()  # das Profil der Datei kann Regeln umstellen
         self.konferenzen.aktualisieren()
         self.lehrkraefte.aktualisieren()
@@ -230,6 +367,21 @@ class Hauptfenster(QMainWindow):
                 return
             break
         self.statusBar().showMessage(f"Exportiert nach {ziel}")
+
+    # ── Ablegen (SPEC-0011 FR-10) ────────────────────────────────────────────
+    def dragEnterEvent(self, event) -> None:
+        if not self.planen.laeuft and event.mimeData().hasUrls():
+            event.acceptProposedAction()
+
+    def dropEvent(self, event) -> None:
+        pfade = [Path(u.toLocalFile()) for u in event.mimeData().urls() if u.isLocalFile()]
+        excel = next((p for p in pfade if p.suffix.lower() == ".xlsx"), None)
+        if excel is None:
+            name = pfade[0].name if pfade else "Datei"
+            self.statusBar().showMessage(f"„{name}“ ignoriert: abgelegt werden kann nur eine .xlsx-Datei")
+            return
+        event.acceptProposedAction()
+        self._lade(excel)
 
     def closeEvent(self, event) -> None:
         self.planen.beende()

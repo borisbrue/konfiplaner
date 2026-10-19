@@ -73,7 +73,7 @@ def test_tabelle_zeigt_konferenzen_vorsitz_und_status(qtbot, tmp_path):
     f = fenster(qtbot, tmp_path)
     assert f.lehrkraefte.proxy.rowCount() == 6
     assert zeile(f, "Anna Eins")[:3] == ["Anna Eins", "Deutsch › Sport › Kunst", "Deutsch"]
-    assert zeile(f, "Dora Vier")[4] == ""
+    assert zeile(f, "Dora Vier")[3] == ""
     assert "6 Lehrkräfte, 0 neu zu verplanen" in f.lehrkraefte.zaehler.text()
 
 
@@ -105,7 +105,7 @@ def test_bearbeiten_konferenzen_und_rangfolge(qtbot, tmp_path):
     f.lehrkraefte.dialog_ausfuehren = dialog_mit(aktion)
     f.lehrkraefte.bearbeite("Anna Eins")
     assert zeile(f, "Anna Eins")[1] == "Sport › Deutsch"
-    assert "geändert" in zeile(f, "Anna Eins")[4] and "neu zu verplanen" in zeile(f, "Anna Eins")[4]
+    assert "geändert" in zeile(f, "Anna Eins")[3] and "neu zu verplanen" in zeile(f, "Anna Eins")[3]
     assert "1 neu zu verplanen" in f.lehrkraefte.zaehler.text()
     assert "Anna Eins geändert" in f.statusBar().currentMessage()
 
@@ -270,7 +270,7 @@ def test_teilneuplanung_aendert_nur_die_markierte_lehrkraft(qtbot, tmp_path):
     assert unterschiede == {"Dora Vier"} and "Dora Vier" in nachher["Sport"]
     assert "Teilneuplanung" in f.planen.stand.text() or "Fertig" in f.planen.stand.text()
     assert "0 neu zu verplanen" in f.lehrkraefte.zaehler.text()
-    assert "Sport (Mi 15:00–16:00)" in zeile(f, "Dora Vier")[3]
+    assert "Sport (Mi 15:00–16:00)" in zeile(f, "Dora Vier")[4]
 
 
 def test_teilneuplanung_die_nicht_aufgeht_laesst_plan_und_markierung(qtbot, tmp_path):
@@ -286,7 +286,7 @@ def test_teilneuplanung_die_nicht_aufgeht_laesst_plan_und_markierung(qtbot, tmp_
     assert f.reiter.currentIndex() == SEITE_PLANEN
     assert "Teilneuplanung nicht möglich" in f.planen.stand.text() and "Sport" in f.planen.stand.text()
     assert "nicht möglich" in f.statusBar().currentMessage()
-    assert "neu zu verplanen" in zeile(f, "Ben Zwei")[4]
+    assert "neu zu verplanen" in zeile(f, "Ben Zwei")[3]
 
 
 def test_alles_neu_planen_loescht_markierungen(qtbot, tmp_path):
@@ -315,7 +315,7 @@ def test_neu_zuordnen_aus_der_auswahl_wird_ueber_die_seite_geloest(qtbot, tmp_pa
     f = fenster(qtbot, tmp_path)
     f.sitzung.waehle("Kunst", False)  # Cem Drei hat nur Kunst
     f.lehrkraefte.aktualisieren()
-    assert "neu zuordnen" in zeile(f, "Cem Drei")[4]
+    assert "neu zuordnen" in zeile(f, "Cem Drei")[3]
     f.lehrkraefte.filterwahl.setCurrentIndex(3)
     assert [f.lehrkraefte.proxy.index(i, 0).data() for i in range(f.lehrkraefte.proxy.rowCount())] == [
         "Cem Drei"

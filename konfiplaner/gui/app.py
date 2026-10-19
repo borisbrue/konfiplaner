@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QApplication
 
 from konfiplaner.anwendung import Sitzung
 from konfiplaner.einstellungen import YamlEinstellungen
+from konfiplaner.gui.design import installiere
 from konfiplaner.gui.hauptfenster import Hauptfenster
 from konfiplaner.restriktionen import STANDARD_REGISTRY, RegistrierungsFehler
 
@@ -19,6 +20,7 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO)
     app = QApplication(sys.argv)
     app.setApplicationName("KonfiPlaner")
+    installiere(app)  # dunkles Design (SPEC-0011)
     try:
         STANDARD_REGISTRY.lade_entry_points()
     except RegistrierungsFehler:

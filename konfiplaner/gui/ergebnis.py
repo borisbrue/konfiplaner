@@ -8,9 +8,30 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QTableView, QTab
 from konfiplaner.anwendung import Sitzung
 from konfiplaner.excel_export import SPALTEN
 from konfiplaner.gui.daten import _tabelle
-from konfiplaner.gui.modelle import FEHLER_FARBE, HINWEIS_FARBE, TabellenModell
+from konfiplaner.gui.design import DUNKEL
+from konfiplaner.gui.fachfarben import fachfarben_anwenden
+from konfiplaner.gui.modelle import (
+    FEHLER_FARBE,
+    HINWEIS_FARBE,
+    TEXT_FEHLER,
+    TEXT_HINWEIS,
+    TEXT_OK,
+    TabellenModell,
+)
 
 REITER = {"Termine": "Nach Termin", "Personen": "Nach Person", "Themen": "Nach Thema", "Hinweise": "Hinweise"}
+
+
+def _schrift_thema(zeile: list, spalte: int):
+    if spalte == 4:
+        return TEXT_OK if zeile[4] == "ja" else TEXT_FEHLER
+    return None
+
+
+def _schrift_hinweis(zeile: list, spalte: int):
+    if spalte == 0:
+        return TEXT_FEHLER if zeile[0] == "Begründung" else TEXT_HINWEIS
+    return None
 
 
 def _faerbe_thema(zeile: list):
@@ -30,11 +51,18 @@ class ErgebnisSeite(QWidget):
         self.status = QLabel("Noch kein Plan")
         self.status.setWordWrap(True)
         self.exportieren = QPushButton("Als &Excel exportieren…")
+        self.exportieren.setProperty("primaer", True)
         self.exportieren.setEnabled(False)
         self.exportieren.clicked.connect(self.export_gewuenscht)
         faerbungen = {"Themen": _faerbe_thema, "Hinweise": _faerbe_hinweis}
-        self.modelle = {n: TabellenModell(SPALTEN[n], faerbung=faerbungen.get(n)) for n in REITER}
+        schriften = {"Themen": _schrift_thema, "Hinweise": _schrift_hinweis}
+        self.modelle = {
+            n: TabellenModell(SPALTEN[n], faerbung=faerbungen.get(n), schrift=schriften.get(n))
+            for n in REITER
+        }
         self.tabellen: dict[str, QTableView] = {n: _tabelle(m, REITER[n]) for n, m in self.modelle.items()}
+        for name, spalte in (("Termine", 3), ("Personen", 4), ("Themen", 0)):
+            fachfarben_anwenden(self.tabellen[name], {spalte: ", "})
         self.reiter = QTabWidget()
         for name, tabelle in self.tabellen.items():
             self.reiter.addTab(tabelle, REITER[name])
@@ -69,5 +97,6 @@ class ErgebnisSeite(QWidget):
         ]
         if plan.status == "kein_plan":
             details = [*plan.begruendung[:3]]
-        self.status.setText(f"{text} – " + "; ".join(details))
+        farbe = {"optimal": DUNKEL.ok, "machbar": DUNKEL.konflikt, "kein_plan": DUNKEL.fehler}[plan.status]
+        self.status.setText(f"<b style='color:{farbe}'>{text}</b> – " + "; ".join(details))
         self.exportieren.setEnabled(True)

@@ -131,3 +131,4 @@ Feature: GUI-Ablauf
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0008 (Festtermine, Rangfaktor), Version unverändert |
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0009 (Konferenzauswahl), Version unverändert |
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0010 (Fixierungen, Lehrkräfte), Version unverändert |
+| 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0011: Seitenleiste ersetzt die Tab-Leiste, Version unverändert |

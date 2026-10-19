@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QDoubleSpinBox,
@@ -21,6 +21,19 @@ from konfiplaner.restriktionen import KonfigurationsFehler
 
 TYP_ANZEIGE = {"hart": "Muss gelten (hart)", "weich": "Soll gelten (weich)", "aus": "Aus"}
 SPALTEN = ["Regel", "Art", "Gewicht", "Beschreibung"]
+ZEILENHOEHE = 60  # drei Zeilen Beschreibung passen hinein
+
+
+def _umhuellt(widget: QWidget) -> QWidget:
+    """Setzt ein Bedienfeld mit Rand in die Zelle, damit es vertikal zentriert und nicht zellhoch ist."""
+    huelle = QWidget()
+    huelle.setObjectName("zellenhuelle")
+    layout = QVBoxLayout(huelle)
+    layout.setContentsMargins(6, 0, 6, 0)
+    layout.addStretch(1)
+    layout.addWidget(widget)
+    layout.addStretch(1)
+    return huelle
 
 
 class RegelnSeite(QWidget):
@@ -33,7 +46,18 @@ class RegelnSeite(QWidget):
         self.tabelle.setHorizontalHeaderLabels(SPALTEN)
         self.tabelle.setAccessibleName("Regeln")
         self.tabelle.verticalHeader().setVisible(False)
-        self.tabelle.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        kopf = self.tabelle.horizontalHeader()
+        kopf.setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        kopf.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        kopf.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        kopf.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
+        kopf.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        self.tabelle.setColumnWidth(1, 196)
+        self.tabelle.setColumnWidth(2, 92)
+        self.tabelle.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.tabelle.setWordWrap(True)
+        self.tabelle.verticalHeader().setDefaultSectionSize(ZEILENHOEHE)
+        self.tabelle.verticalHeader().setMinimumSectionSize(ZEILENHOEHE)
         self.standard = QPushButton("&Standard wiederherstellen")
         self.laden = QPushButton("Regeln aus &Datei laden…")
         knoepfe = QHBoxLayout()
@@ -41,12 +65,13 @@ class RegelnSeite(QWidget):
         knoepfe.addWidget(self.laden)
         knoepfe.addStretch(1)
         wurzel = QVBoxLayout(self)
-        wurzel.addWidget(
-            QLabel(
-                "Harte Regeln müssen gelten, sonst gibt es keinen Plan. Weiche Regeln dürfen verletzt werden; "
-                "ein höheres Gewicht macht eine Verletzung teurer."
-            )
+        erklaerung = QLabel(
+            "Harte Regeln müssen gelten, sonst gibt es keinen Plan. Weiche Regeln dürfen verletzt werden; "
+            "ein höheres Gewicht macht eine Verletzung teurer."
         )
+        erklaerung.setObjectName("hinweis")
+        erklaerung.setWordWrap(True)
+        wurzel.addWidget(erklaerung)
         wurzel.addWidget(self.tabelle, 1)
         wurzel.addLayout(knoepfe)
         self.standard.clicked.connect(self._standard)
@@ -57,17 +82,23 @@ class RegelnSeite(QWidget):
         regeln = self.sitzung.regeln()
         self.tabelle.setRowCount(len(regeln))
         self._regeln = {r.name: r for r in regeln}
+        self._boxen: dict[str, QComboBox] = {}
+        self._spins: dict[str, QDoubleSpinBox] = {}
         for zeile, r in enumerate(regeln):
             name = QTableWidgetItem(r.name)
             name.setToolTip(r.parameter_text or r.name)
             self.tabelle.setItem(zeile, 0, name)
-            self.tabelle.setCellWidget(zeile, 1, self._typ_auswahl(r))
-            self.tabelle.setCellWidget(zeile, 2, self._gewicht(r))
+            box, spin = self._typ_auswahl(r), self._gewicht(r)
+            self._boxen[r.name], self._spins[r.name] = box, spin
+            self.tabelle.setCellWidget(zeile, 1, _umhuellt(box))
+            self.tabelle.setCellWidget(zeile, 2, _umhuellt(spin))
             beschreibung = r.beschreibung or ""
             if not r.bearbeitbar:
                 beschreibung = (beschreibung + " " if beschreibung else "") + "(Parameter nur per Regeldatei)"
-            self.tabelle.setItem(zeile, 3, QTableWidgetItem(beschreibung))
-        self.tabelle.resizeColumnsToContents()
+            beschreibung_item = QTableWidgetItem(beschreibung)
+            beschreibung_item.setToolTip(beschreibung)
+            self.tabelle.setItem(zeile, 3, beschreibung_item)
+        self.tabelle.horizontalHeader().setStretchLastSection(True)
 
     def _typ_auswahl(self, r: RegelAnsicht) -> QComboBox:
         box = QComboBox()
@@ -89,6 +120,13 @@ class RegelnSeite(QWidget):
         spin.valueChanged.connect(lambda _v, n=r.name: self._aenderung(n))
         return spin
 
+    def typ_auswahl(self, name: str) -> QComboBox:
+        """Auswahlfeld der Art (hart/weich/aus) einer Regel."""
+        return self._boxen[name]
+
+    def gewichtsfeld(self, name: str) -> QDoubleSpinBox:
+        return self._spins[name]
+
     def _zeile(self, name: str) -> int:
         return next(i for i in range(self.tabelle.rowCount()) if self.tabelle.item(i, 0).text() == name)
 
@@ -96,16 +134,15 @@ class RegelnSeite(QWidget):
         self._aenderung(name)
 
     def _aenderung(self, name: str) -> None:
-        zeile = self._zeile(name)
-        typ = self.tabelle.cellWidget(zeile, 1).currentData()
-        gewicht = self.tabelle.cellWidget(zeile, 2).value()
+        typ = self._boxen[name].currentData()
+        gewicht = self._spins[name].value()
         try:
             self.sitzung.setze_regel(name, typ, gewicht)
         except KonfigurationsFehler as e:
             self.hinweis.emit(str(e))
             self.aktualisieren()
             return
-        self.tabelle.cellWidget(zeile, 2).setEnabled(typ == "weich")
+        self._spins[name].setEnabled(typ == "weich")
         self.hinweis.emit(
             f"Regel {name}: {TYP_ANZEIGE[typ]}" + (f", Gewicht {gewicht:g}" if typ == "weich" else "")
         )

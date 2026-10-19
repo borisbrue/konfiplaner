@@ -28,12 +28,13 @@ from PySide6.QtWidgets import (
 )
 
 from konfiplaner.anwendung import LehrerAnsicht, Sitzung
+from konfiplaner.gui.fachfarben import fachfarben_anwenden
 from konfiplaner.gui.lehrkraft_dialoge import LehrkraftDialog, SammelDialog
-from konfiplaner.gui.modelle import FEHLER_FARBE, HINWEIS_FARBE
+from konfiplaner.gui.modelle import FEHLER_FARBE, HINWEIS_FARBE, TEXT_FEHLER, TEXT_HINWEIS
 from konfiplaner.modell import ModellFehler
 
 LEER = QModelIndex()
-KOPF = ("Lehrkraft", "Konferenzen (Rangfolge)", "Vorsitz", "Teilnahme im Plan", "Status")
+KOPF = ("Lehrkraft", "Konferenzen (Rangfolge)", "Vorsitz", "Status", "Teilnahme im Plan")
 FILTER = (
     ("Alle", lambda a: True),
     ("Neu zu verplanen", lambda a: a.markiert),
@@ -87,14 +88,19 @@ class LehrerModell(QAbstractTableModel):
                 a.name,
                 " › ".join(a.konferenzen),
                 ", ".join(a.vorsitz_von),
-                "; ".join(a.teilnahmen),
                 status(a),
+                "; ".join(a.teilnahmen),
             )[index.column()]
         if role == Qt.ItemDataRole.BackgroundRole:
             if a.neu_zuordnen:
                 return FEHLER_FARBE
             if a.markiert:
                 return HINWEIS_FARBE
+        if role == Qt.ItemDataRole.ForegroundRole and index.column() == 3:
+            if a.neu_zuordnen:
+                return TEXT_FEHLER
+            if a.markiert:
+                return TEXT_HINWEIS
         return None
 
     def headerData(
@@ -136,10 +142,13 @@ class LehrkraefteSeite(QWidget):
         self.dialog_ausfuehren: Callable[[QDialog], bool] = lambda d: d.exec() == QDialog.DialogCode.Accepted
 
         self.suche = QLineEdit()
-        self.suche.setPlaceholderText("Suche nach Name oder Konferenz")
+        self.suche.setPlaceholderText("Name oder Konferenz suchen")
+        self.suche.setMinimumWidth(150)
+        self.suche.setClearButtonEnabled(True)
         self.suche.setAccessibleName("Suche")
         self.filterwahl = QComboBox()
         self.filterwahl.setAccessibleName("Filter")
+        self.filterwahl.setFixedWidth(150)
         for text, _ in FILTER:
             self.filterwahl.addItem(text)
         self.zaehler = QLabel("")
@@ -156,34 +165,29 @@ class LehrkraefteSeite(QWidget):
         self.tabelle.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.tabelle.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.tabelle.verticalHeader().setVisible(False)
+        fachfarben_anwenden(self.tabelle, {1: " › ", 2: ", ", 4: "; "})
         kopfzeile = self.tabelle.horizontalHeader()
         kopfzeile.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        kopfzeile.setStretchLastSection(True)
+        kopfzeile.setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        kopfzeile.setStretchLastSection(True)  # die lange Spalte „Teilnahme im Plan“ nimmt den Rest
 
         self.bearbeiten = QPushButton("&Bearbeiten…")
-        self.sammel = QPushButton("&Sammeländerung…")
+        self.sammel = QPushButton("&Mehrere ändern…")
         self.zuruecksetzen = QPushButton("&Zurücksetzen")
         self.teil = QPushButton("&Markierte neu verplanen")
+        self.teil.setProperty("primaer", True)
         self.alles = QPushButton("&Alles neu planen")
-        knoepfe = QHBoxLayout()
         for k in (self.bearbeiten, self.sammel, self.zuruecksetzen):
-            knoepfe.addWidget(k)
-        knoepfe.addStretch(1)
-        knoepfe.addWidget(self.teil)
-        knoepfe.addWidget(self.alles)
+            kopf.addWidget(k)  # Aktionen auf der Auswahl stehen bei Suche und Filter
+        unten = QHBoxLayout()
+        unten.addWidget(self.zaehler, 1)
+        unten.addWidget(self.teil)
+        unten.addWidget(self.alles)  # Planungsaktionen unten rechts
 
-        hinweis = QLabel(
-            "Konferenzen, Rangfolge, Vorsitz und Termine einzelner oder mehrerer Lehrkräfte ändern. "
-            "Geänderte Lehrkräfte sind orange markiert; „Markierte neu verplanen“ berechnet nur sie neu, "
-            "der Plan der übrigen bleibt unverändert."
-        )
-        hinweis.setWordWrap(True)
         wurzel = QVBoxLayout(self)
-        wurzel.addWidget(hinweis)
         wurzel.addLayout(kopf)
         wurzel.addWidget(self.tabelle, 1)
-        wurzel.addWidget(self.zaehler)
-        wurzel.addLayout(knoepfe)
+        wurzel.addLayout(unten)
 
         self.suche.textChanged.connect(self._filter)
         self.filterwahl.currentIndexChanged.connect(self._filter)

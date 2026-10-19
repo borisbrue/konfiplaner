@@ -5,8 +5,8 @@ from __future__ import annotations
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
+    QHeaderView,
     QLabel,
-    QListWidget,
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
@@ -15,6 +15,8 @@ from PySide6.QtWidgets import (
 )
 
 from konfiplaner.anwendung import Sitzung
+from konfiplaner.gui.design import fachpunkt
+from konfiplaner.gui.fachfarben import LeerListe
 
 SPALTEN = ["Konferenz", "Mitglieder", "Vorsitz", "Termine"]
 
@@ -27,11 +29,6 @@ class KonferenzenSeite(QWidget):
         super().__init__()
         self.sitzung = sitzung
         self._sperre = False
-        info = QLabel(
-            "Nur ausgewählte Konferenzen werden geplant. Wer eine Konferenz verliert, behält die übrigen; "
-            "wer keine mehr hat, steht unten in „Neu zuordnen“."
-        )
-        info.setWordWrap(True)
         self.alle = QPushButton("&Alle")
         self.keine = QPushButton("&Keine")
         self.zaehler = QLabel("")
@@ -44,10 +41,12 @@ class KonferenzenSeite(QWidget):
         self.tabelle.setAccessibleName("Konferenzen")
         self.tabelle.verticalHeader().setVisible(False)
         self.tabelle.setAlternatingRowColors(True)
-        self.tabelle.horizontalHeader().setStretchLastSection(True)
-        self.neu_zuordnen = QListWidget()
+        kopfzeile = self.tabelle.horizontalHeader()
+        kopfzeile.setStretchLastSection(False)
+        kopfzeile.setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.neu_zuordnen = LeerListe("Niemand: Alle haben noch eine Konferenz.")
         self.neu_zuordnen.setAccessibleName("Lehrkräfte zum Neu-Zuordnen")
-        self.ohne_konferenz = QListWidget()
+        self.ohne_konferenz = LeerListe("Niemand: Alle haben in der Datei eine Konferenz.")
         self.ohne_konferenz.setAccessibleName("Lehrkräfte ohne Konferenz")
         listen = QHBoxLayout()
         for titel, liste in (
@@ -61,7 +60,6 @@ class KonferenzenSeite(QWidget):
             spalte.addWidget(liste, 1)
             listen.addLayout(spalte)
         wurzel = QVBoxLayout(self)
-        wurzel.addWidget(info)
         wurzel.addLayout(knoepfe)
         wurzel.addWidget(self.tabelle, 3)
         wurzel.addLayout(listen, 2)
@@ -81,13 +79,22 @@ class KonferenzenSeite(QWidget):
                     Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsSelectable
                 )
                 name.setCheckState(Qt.CheckState.Checked if k.ausgewaehlt else Qt.CheckState.Unchecked)
+                name.setIcon(fachpunkt(k.name))
                 self.tabelle.setItem(zeile, 0, name)
                 for spalte, wert in ((1, str(k.mitglieder)), (2, k.vorsitz or ""), (3, str(k.termine))):
                     eintrag = QTableWidgetItem(wert)
                     eintrag.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
+                    if spalte in (1, 3):
+                        eintrag.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
                     self.tabelle.setItem(zeile, spalte, eintrag)
-            self.tabelle.resizeColumnsToContents()
-            self.tabelle.horizontalHeader().setStretchLastSection(True)
+            kopfzeile = self.tabelle.horizontalHeader()
+            kopfzeile.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+            for spalte in (1, 2, 3):
+                kopfzeile.setSectionResizeMode(spalte, QHeaderView.ResizeMode.ResizeToContents)
+            for spalte in (1, 3):  # Zahlen rechtsbündig, auch die Überschrift
+                self.tabelle.horizontalHeaderItem(spalte).setTextAlignment(
+                    Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+                )
             gewaehlt = sum(1 for k in konferenzen if k.ausgewaehlt)
             self.zaehler.setText(f"{gewaehlt} von {len(konferenzen)} Konferenzen ausgewählt")
             self.neu_zuordnen.clear()

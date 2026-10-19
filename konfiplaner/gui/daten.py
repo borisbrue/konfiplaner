@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import time
 
-from PySide6.QtCore import QModelIndex, QTime, Signal
+from PySide6.QtCore import QModelIndex, Qt, QTime, Signal
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -13,10 +13,10 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QLabel,
     QLineEdit,
-    QListWidget,
     QPushButton,
     QSpinBox,
     QSplitter,
+    QStackedLayout,
     QTableView,
     QTabWidget,
     QTimeEdit,
@@ -26,6 +26,8 @@ from PySide6.QtWidgets import (
 
 from konfiplaner.anwendung import Sitzung
 from konfiplaner.excel_import import ImportDateiFehler, finde_spalte, rohdaten
+from konfiplaner.gui.design import DUNKEL
+from konfiplaner.gui.fachfarben import LeerListe, fachfarben_anwenden
 from konfiplaner.gui.modelle import (
     FEHLER_FARBE,
     HINWEIS_FARBE,
@@ -46,6 +48,7 @@ def _tabelle(modell, name: str) -> QTableView:
     t.setAlternatingRowColors(True)
     t.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
     t.horizontalHeader().setStretchLastSection(True)
+    t.horizontalHeader().setDefaultAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
     t.verticalHeader().setVisible(False)
     return t
 
@@ -59,12 +62,16 @@ class DatenSeite(QWidget):
         super().__init__()
         self.sitzung = sitzung
         self._roh: dict[str, list[list[str]]] = {}
+        self._zusammenfassung: list[str] = []
 
         self.oeffnen = QPushButton("Excel-Datei &öffnen…")
+        self.oeffnen.setProperty("primaer", True)
         self.neu_laden = QPushButton("&Neu laden")
         self.neu_laden.setEnabled(False)
         self.pfad = QLabel("Noch keine Datei geladen")
         self.pfad.setWordWrap(True)
+        self.pfad.setObjectName("hinweis")
+        self.pfad.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.zusammenfassung = QLabel("")
 
         kopf = QHBoxLayout()
@@ -81,6 +88,8 @@ class DatenSeite(QWidget):
         self.blatt_auswahl.setAccessibleName("Blatt der Vorschau")
         self.vorschau = TabellenModell([])
         self.vorschau_tabelle = _tabelle(self.vorschau, "Vorschau der Excel-Datei")
+        self.vorschau_tabelle.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.vorschau_tabelle.horizontalHeader().setStretchLastSection(False)
         vorschau = QWidget()
         v = QVBoxLayout(vorschau)
         v.addWidget(self.blatt_auswahl)
@@ -92,6 +101,7 @@ class DatenSeite(QWidget):
         self.themen.geaendert.connect(self.daten_geaendert)
         self.themen_tabelle = _tabelle(self.themen, "Themenwerte")
         self.themen_tabelle.setItemDelegateForColumn(4, VorsitzDelegate(sitzung, self.themen_tabelle))
+        fachfarben_anwenden(self.themen_tabelle, {0: ", "})
         themen = QWidget()
         t = QVBoxLayout(themen)
         t.addWidget(
@@ -138,6 +148,7 @@ class DatenSeite(QWidget):
         kopf_n.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         kopf_n.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         kopf_n.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        fachfarben_anwenden(self.normalisierung_tabelle, {2: ", "})
         self.vorschlaege = QPushButton("&Alle Vorschläge übernehmen")
         self.vorschlaege.clicked.connect(self._alle_vorschlaege)
         normalisierung = QWidget()
@@ -151,7 +162,7 @@ class DatenSeite(QWidget):
         n.addWidget(self.vorschlaege)
         n.addWidget(self.normalisierung_tabelle, 1)
 
-        self.ohne_konferenz = QListWidget()
+        self.ohne_konferenz = LeerListe("Niemand: Alle haben in der Datei eine Konferenz.")
         self.ohne_konferenz.setAccessibleName("Lehrkräfte ohne Konferenz")
         ohne = QWidget()
         o = QVBoxLayout(ohne)
@@ -189,9 +200,31 @@ class DatenSeite(QWidget):
         teiler.addWidget(self.reiter)
         teiler.setSizes([200, 400])
 
+        # Leerer Zustand: sagt, was als Nächstes zu tun ist (SPEC-0011 FR-09)
+        self.leer = QWidget()
+        self.leer.setObjectName("ablage")
+        self.leer.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        leer = QVBoxLayout(self.leer)
+        leer.addStretch(1)
+        for objekt, text in (
+            ("leertitel", "Noch keine Datei"),
+            ("leer", "Excel-Datei öffnen oder hier ablegen."),
+            ("hinweis", "Lehrerliste mit Fachkonferenzen oder Personenliste mit zwei Themen, als .xlsx"),
+        ):
+            zeile = QLabel(text)
+            zeile.setObjectName(objekt)
+            zeile.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            zeile.setWordWrap(True)
+            leer.addWidget(zeile)
+        leer.addStretch(1)
+        self.stapel = QStackedLayout()
+        self.stapel.addWidget(self.leer)
+        self.stapel.addWidget(teiler)
+        self.inhalt = teiler
+
         wurzel = QVBoxLayout(self)
         wurzel.addLayout(kopf)
-        wurzel.addWidget(teiler, 1)
+        wurzel.addLayout(self.stapel, 1)
         self.aktualisieren()
 
     # ── Anzeige ──────────────────────────────────────────────────────────────
@@ -203,23 +236,23 @@ class DatenSeite(QWidget):
         s = self.sitzung
         erg = s.ergebnis
         self.neu_laden.setEnabled(s.datei is not None and s.datei.exists())
-        self.pfad.setText(str(s.datei) if s.datei else "Noch keine Datei geladen")
+        self.pfad.setText(s.datei.name if s.datei else "Noch keine Datei geladen")
+        self.pfad.setToolTip(str(s.datei) if s.datei else "")
         zeilen = []
         if erg:
             zeilen = [
                 ["Fehler" if m.schwere == "fehler" else "Warnung", m.blatt, m.zeile, m.spalte, m.text]
                 for m in erg.meldungen
             ]
-            teile = [
+            self._zusammenfassung = [
                 f"{len(erg.personen)} Personen",
                 f"{len(s.themen)} Themen",
                 f"{len(s.zeitslots)} Zeitslots",
-                f"{len(erg.fehler)} Fehler",
-                f"{len(erg.warnungen)} Warnungen",
+                self._zaehle(len(erg.fehler), "Fehler", DUNKEL.fehler),
+                self._zaehle(len(erg.warnungen), "Warnungen", DUNKEL.konflikt),
             ]
-            self.zusammenfassung.setText(", ".join(teile))
         else:
-            self.zusammenfassung.setText("")
+            self._zusammenfassung = []
         self.meldungen.setze(zeilen)
         self.meldungs_tabelle.resizeColumnsToContents()
         self.meldungs_tabelle.horizontalHeader().setStretchLastSection(True)
@@ -245,10 +278,12 @@ class DatenSeite(QWidget):
         self.ohne_konferenz.clear()
         self.ohne_konferenz.addItems(erg.ohne_konferenz if lehrerliste and erg else [])
         if lehrerliste and erg:
-            self.zusammenfassung.setText(
-                self.zusammenfassung.text()
-                + f", {len(erg.ohne_konferenz)} ohne Konferenz, {offen} Zuordnungen offen"
-            )
+            self._zusammenfassung += [
+                f"{len(erg.ohne_konferenz)} ohne Konferenz",
+                self._zaehle(offen, "Zuordnungen offen", DUNKEL.konflikt),
+            ]
+        self.zusammenfassung.setText(", ".join(self._zusammenfassung))
+        self.stapel.setCurrentWidget(self.inhalt if erg is not None else self.leer)
         self.themen.neu()
         self.slots.setze([[z.tag, z.start, z.ende] for z in s.zeitslots])
         quelle = "aus der Datei" if erg and erg.zeitslots and s.zeitslots == erg.zeitslots else "erzeugt"
@@ -283,9 +318,16 @@ class DatenSeite(QWidget):
         self.vorschau.setze([z + [""] * (len(kopf) - len(z)) for z in zeilen[1:]], kopf)
 
     @staticmethod
+    def _zaehle(anzahl: int, name: str, farbe: str) -> str:
+        """Zähler, bei Anzahl > 0 farbig hervorgehoben (immer mit Text)."""
+        text = f"{anzahl} {name}"
+        return f"<b style='color:{farbe}'>{text}</b>" if anzahl else text
+
+    @staticmethod
     def _hinweistext(text: str) -> QLabel:
         label = QLabel(text)
         label.setWordWrap(True)
+        label.setObjectName("hinweis")
         return label
 
     # ── Normalisierung (SPEC-0007) ───────────────────────────────────────────

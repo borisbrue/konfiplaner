@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QFormLayout,
@@ -41,13 +41,20 @@ class PlanenSeite(QWidget):
         self.zeitlimit.valueChanged.connect(self._zeitlimit_geaendert)
         self.planen = QPushButton("&Planen")
         self.planen.setDefault(True)
+        self.planen.setProperty("primaer", True)
         self.abbrechen = QPushButton("&Abbrechen")
         self.abbrechen.setEnabled(False)
         self.balken = QProgressBar()
         self.balken.setRange(0, 1)
         self.balken.setTextVisible(False)
         self.stand = QLabel("")
+        self.zeitlimit.setFixedWidth(120)
+        self.umfang = QLabel("")
+        self.umfang.setObjectName("hinweis")
+        self.umfang.setWordWrap(True)
         form = QFormLayout()
+        form.setContentsMargins(0, 8, 0, 8)
+        form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
         form.addRow("Zeitlimit:", self.zeitlimit)
         knoepfe = QHBoxLayout()
         knoepfe.addWidget(self.planen)
@@ -55,6 +62,7 @@ class PlanenSeite(QWidget):
         knoepfe.addStretch(1)
         wurzel = QVBoxLayout(self)
         wurzel.addWidget(self.voraussetzung)
+        wurzel.addWidget(self.umfang)
         wurzel.addLayout(form)
         wurzel.addLayout(knoepfe)
         wurzel.addWidget(self.balken)
@@ -72,6 +80,17 @@ class PlanenSeite(QWidget):
         hindernisse = self.sitzung.planungshindernisse()
         self.voraussetzung.setText(
             "Bereit zum Planen." if not hindernisse else "Planen nicht möglich: " + "; ".join(hindernisse)
+        )
+        self.voraussetzung.setProperty("zustand", "blockiert" if hindernisse else "bereit")
+        self.voraussetzung.style().unpolish(self.voraussetzung)
+        self.voraussetzung.style().polish(self.voraussetzung)
+        s = self.sitzung
+        themen = s.ausgewaehlte_themen()
+        self.umfang.setText(
+            f"Geplant werden {len(themen)} Konferenzen mit {sum(len(t.festtermine) for t in themen)} festen Terminen "
+            f"für {len(s.effektive_personen())} Lehrkräfte."
+            if s.ergebnis is not None
+            else ""
         )
         self.planen.setEnabled(not hindernisse and not self.laeuft)
 

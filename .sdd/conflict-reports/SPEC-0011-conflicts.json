@@ -1,0 +1,83 @@
+{
+  "spec_id": "SPEC-0011",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0011-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-05",
+      "conflicting_contract": "SPEC-0005:FR-01",
+      "detail": "Die Seitenleiste mit den Schritten Daten, Konferenzen, Lehrkräfte, Regeln, Planen und Ergebnis legt den Ablauf und die Navigation der GUI fest. Das ist dasselbe Thema wie der GUI-Ablauf Import → Planung → Export in SPEC-0005. SPEC-0011 gibt aber 'keine Funktionsänderungen' vor, also muss die Seitenleiste die bestehende Seitenstruktur abbilden und darf keine zweite Navigation daneben aufbauen. SPEC-0005 FR-01 ist geraten, weil dessen Anforderungstext nicht vorlag.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt: SPEC-0011 ändert nur die Darstellung, keine Funktion (INV-03); die Seitenleiste ersetzt die Tab-Leiste bei gleichen Seiten und Zuständen; die Fachfarbe kommt vom normalisierten Konferenznamen (FR-04 präzisiert).",
+        "resolved_at": "2026-10-19T20:35:30Z"
+      }
+    },
+    {
+      "id": "CF-0011-R002",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-03",
+      "conflicting_contract": "SPEC-0005:FR-01",
+      "detail": "Schriftwahl, Palette und QSS-Stilregeln aus Design-Tokens gestalten dieselbe PySide6-Oberfläche, die SPEC-0005 als funktionale GUI beschreibt. Die Zuständigkeit für Darstellung ist zwischen beiden Specs nicht klar getrennt. SPEC-0005 FR-01 ist geraten, weil dessen Anforderungstext nicht vorlag.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt: SPEC-0011 ändert nur die Darstellung, keine Funktion (INV-03); die Seitenleiste ersetzt die Tab-Leiste bei gleichen Seiten und Zuständen; die Fachfarbe kommt vom normalisierten Konferenznamen (FR-04 präzisiert).",
+        "resolved_at": "2026-10-19T20:35:31Z"
+      }
+    },
+    {
+      "id": "CF-0011-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0007:FR-01",
+      "detail": "Die Fachfarbe wird aus dem normalisierten Konferenznamen abgeleitet, den SPEC-0007 festlegt. Dadurch hängt SPEC-0011 von der Normalisierung ab. Ändert sich die Zuordnung der Namen, ändern sich auch die Farben. Farbe und Normalisierung sollten nicht an zwei Stellen unabhängig ermittelt werden. SPEC-0007 FR-01 ist geraten, weil dessen Anforderungstext nicht vorlag.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt: SPEC-0011 ändert nur die Darstellung, keine Funktion (INV-03); die Seitenleiste ersetzt die Tab-Leiste bei gleichen Seiten und Zuständen; die Fachfarbe kommt vom normalisierten Konferenznamen (FR-04 präzisiert).",
+        "resolved_at": "2026-10-19T20:35:31Z"
+      }
+    },
+    {
+      "id": "CF-0011-R004",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-05",
+      "conflicting_contract": "SPEC-0009:FR-01",
+      "detail": "Der Kurzstatus der Seitenleiste (z. B. 'Konferenzen: 17 von 26 ausgewählt') gibt den Auswahlstand aus SPEC-0009 wieder. SPEC-0011 darf dafür keine eigene Zähllogik haben, sondern muss die bestehenden Ergebnisse der Konferenzauswahl anzeigen. SPEC-0009 FR-01 ist geraten, weil dessen Anforderungstext nicht vorlag.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt: SPEC-0011 ändert nur die Darstellung, keine Funktion (INV-03); die Seitenleiste ersetzt die Tab-Leiste bei gleichen Seiten und Zuständen; die Fachfarbe kommt vom normalisierten Konferenznamen (FR-04 präzisiert).",
+        "resolved_at": "2026-10-19T20:35:31Z"
+      }
+    },
+    {
+      "id": "CF-0011-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0010:FR-01",
+      "detail": "Die Fachfarbe soll in der Ansicht Lehrkräfte erscheinen, in der SPEC-0010 die manuelle Zuordnung und Rangfolge von Konferenzen bearbeitet. SPEC-0011 verändert diese Ansicht nur in der Darstellung. Die Farbpunkte dürfen weder Bedienung noch Teilneuplanung beeinflussen. SPEC-0010 FR-01 ist geraten, weil dessen Anforderungstext nicht vorlag.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt: SPEC-0011 ändert nur die Darstellung, keine Funktion (INV-03); die Seitenleiste ersetzt die Tab-Leiste bei gleichen Seiten und Zuständen; die Fachfarbe kommt vom normalisierten Konferenznamen (FR-04 präzisiert).",
+        "resolved_at": "2026-10-19T20:35:32Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-10-19T20:35:49Z"
+}
