@@ -17,15 +17,17 @@ class PlanungsArbeiter(QObject):
     fertig = Signal(object)  # Plan
     fehler = Signal(str)
 
-    def __init__(self, sitzung: Sitzung) -> None:
+    def __init__(self, sitzung: Sitzung, teil: bool = False) -> None:
         super().__init__()
         self._sitzung = sitzung
+        self._teil = teil
         self.abbruch = threading.Event()
 
     @Slot()
     def lauf(self) -> None:
         try:
-            plan = self._sitzung.planen(self._melde, self.abbruch)
+            planen = self._sitzung.teil_neu_planen if self._teil else self._sitzung.planen
+            plan = planen(self._melde, self.abbruch)
         except (ModellFehler, KonfigurationsFehler) as e:
             self.fehler.emit(str(e))
         except (ValueError, RuntimeError, OSError) as e:  # der Thread darf nicht still sterben
@@ -40,9 +42,9 @@ class PlanungsArbeiter(QObject):
 class PlanungsLauf:
     """Besitzt Thread und Arbeiter eines Laufs und räumt danach auf."""
 
-    def __init__(self, sitzung: Sitzung) -> None:
+    def __init__(self, sitzung: Sitzung, teil: bool = False) -> None:
         self.thread = QThread()
-        self.arbeiter = PlanungsArbeiter(sitzung)
+        self.arbeiter = PlanungsArbeiter(sitzung, teil)
         self.arbeiter.moveToThread(self.thread)
         self.thread.started.connect(self.arbeiter.lauf)
         self.arbeiter.fertig.connect(self.thread.quit)

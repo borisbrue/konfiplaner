@@ -45,7 +45,7 @@ Planer:innen sollen ohne Kommandozeile arbeiten: Excel laden, Regeln wählen, pl
 
 **Nicht-Ziele (explizit):**
 - Kein Mehrbenutzer-/Web-Betrieb.
-- Kein vollständiger manueller Plan-Editor in v1 (nur Ansicht; Drag-and-Drop später).
+- Kein manueller Editor für den berechneten Plan (nur Ansicht; Drag-and-Drop später). Die Eingabezuordnung der Lehrkräfte ist dagegen änderbar (SPEC-0010); der Plan wird danach neu berechnet.
 
 ## 3. User Stories
 
@@ -58,7 +58,7 @@ Planer:innen sollen ohne Kommandozeile arbeiten: Excel laden, Regeln wählen, pl
 
 ## 4. Funktionale Anforderungen
 
-- **FR-01:** Hauptfenster mit Schritten: Daten laden, Konferenzen auswählen (SPEC-0009), Regeln, Planen, Ergebnis, Export.
+- **FR-01:** Hauptfenster mit Schritten: Daten laden, Konferenzen auswählen (SPEC-0009), Lehrkräfte zuordnen (SPEC-0010), Regeln, Planen, Ergebnis, Export.
 - **FR-02:** Fehlerliste aus SPEC-0001 wird tabellarisch angezeigt; Klick markiert die Quelle.
 - **FR-03:** Regelverwaltung listet alle registrierten Restriktionen (SPEC-0003) mit Schalter und Gewicht.
 - **FR-04:** Planung läuft in einem Worker-Thread mit Fortschritt, Zeitlimit und Abbrechen.
@@ -130,3 +130,4 @@ Feature: GUI-Ablauf
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0006 (Vorsitz), Version unverändert |
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0008 (Festtermine, Rangfaktor), Version unverändert |
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0009 (Konferenzauswahl), Version unverändert |
+| 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0010 (Fixierungen, Lehrkräfte), Version unverändert |

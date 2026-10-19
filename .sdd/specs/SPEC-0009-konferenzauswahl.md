@@ -55,7 +55,7 @@ Die Liste enthält alle möglichen Fachkonferenzen. Für einen Planungslauf soll
 ## 4. Funktionale Anforderungen
 
 - **FR-01 (Auswahl):** Jede Konferenz ist ausgewählt oder abgewählt; Standard ist ausgewählt (auch für neu hinzukommende). Geplant werden nur ausgewählte Konferenzen.
-- **FR-02 (Personen):** Eine abgewählte Konferenz entfällt aus den Konferenzen jeder Person; die übrigen behalten ihre Reihenfolge (Rangfolge SPEC-0008 FR-05) und rücken nach.
+- **FR-02 (Personen):** Eine abgewählte Konferenz entfällt aus den Konferenzen jeder Person (auch aus manuell zugeordneten, SPEC-0010 FR-01); die übrigen behalten ihre Reihenfolge (Rangfolge SPEC-0008 FR-05) und rücken nach.
 - **FR-03 (Termine und Vorsitz):** Eine abgewählte Konferenz hat im Modell keine Termine und keinen Vorsitz; das Blatt `Konferenzen` bleibt unverändert, das abgeleitete Zeitraster ebenso.
 - **FR-04 (Neu zuordnen):** Personen, die vor der Auswahl mindestens eine, danach keine Konferenz haben, stehen in der Liste „Neu zuordnen". Sie nehmen an keinem Termin teil. Personen, die schon in der Datei keine Konferenz hatten, bleiben in der Liste „Ohne Konferenz" (SPEC-0007 FR-09).
 - **FR-05 (Planbarkeit):** Ohne mindestens eine ausgewählte Konferenz ist „Planen" nicht möglich.
@@ -112,3 +112,4 @@ Feature: Konferenzauswahl
 | Datum      | Version | Autor        | Änderung            |
 |------------|---------|--------------|---------------------|
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
+| 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0010 (Fixierungen, Lehrkräfte), Version unverändert |

@@ -13,6 +13,7 @@ from konfiplaner.gui.hauptfenster import (
     SEITE_DATEN,
     SEITE_ERGEBNIS,
     SEITE_KONFERENZEN,
+    SEITE_LEHRKRAEFTE,
     SEITE_PLANEN,
     Hauptfenster,
 )
@@ -269,7 +270,7 @@ def test_alle_bedienelemente_sind_beschriftet(qtbot, tmp_path):
         assert tabelle.accessibleName()
 
 
-@pytest.mark.parametrize("seite", [SEITE_DATEN, SEITE_PLANEN])
+@pytest.mark.parametrize("seite", [SEITE_DATEN, SEITE_KONFERENZEN, SEITE_LEHRKRAEFTE, SEITE_PLANEN])
 def test_fenster_passt_auf_kleine_bildschirme(qtbot, tmp_path, seite):
     f, _ = fenster(qtbot, tmp_path, {"Personen": PERSONEN_VIELE, "Zeitslots": SLOTS})
     f.datei_oeffnen()

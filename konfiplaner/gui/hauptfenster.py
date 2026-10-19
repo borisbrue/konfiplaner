@@ -15,11 +15,19 @@ from konfiplaner.gui.daten import DatenSeite
 from konfiplaner.gui.dialoge import Dialoge
 from konfiplaner.gui.ergebnis import ErgebnisSeite
 from konfiplaner.gui.konferenzen import KonferenzenSeite
+from konfiplaner.gui.lehrkraefte import LehrkraefteSeite
 from konfiplaner.gui.planen import PlanenSeite
 from konfiplaner.gui.regeln import RegelnSeite
 from konfiplaner.modell import Plan
 
-SEITE_DATEN, SEITE_KONFERENZEN, SEITE_REGELN, SEITE_PLANEN, SEITE_ERGEBNIS = range(5)
+(
+    SEITE_DATEN,
+    SEITE_KONFERENZEN,
+    SEITE_LEHRKRAEFTE,
+    SEITE_REGELN,
+    SEITE_PLANEN,
+    SEITE_ERGEBNIS,
+) = range(6)
 
 
 class Hauptfenster(QMainWindow):
@@ -33,24 +41,29 @@ class Hauptfenster(QMainWindow):
 
         self.daten = DatenSeite(sitzung)
         self.konferenzen = KonferenzenSeite(sitzung)
+        self.lehrkraefte = LehrkraefteSeite(sitzung)
         self.regeln = RegelnSeite(sitzung, self.dialoge)
         self.planen = PlanenSeite(sitzung)
         self.ergebnis = ErgebnisSeite(sitzung)
         self.reiter = QTabWidget()
         self.reiter.addTab(self.daten, "1  Daten")
         self.reiter.addTab(self.konferenzen, "2  Konferenzen")
-        self.reiter.addTab(self.regeln, "3  Regeln")
-        self.reiter.addTab(self.planen, "4  Planen")
-        self.reiter.addTab(self.ergebnis, "5  Ergebnis")
+        self.reiter.addTab(self.lehrkraefte, "3  Lehrkräfte")
+        self.reiter.addTab(self.regeln, "4  Regeln")
+        self.reiter.addTab(self.planen, "5  Planen")
+        self.reiter.addTab(self.ergebnis, "6  Ergebnis")
         self.setCentralWidget(self.reiter)
 
         self._menue()
         self.daten.oeffnen.clicked.connect(self.datei_oeffnen)
         self.daten.neu_laden.clicked.connect(self.neu_laden)
         self.daten.daten_geaendert.connect(self._daten_geaendert)
-        for seite in (self.daten, self.konferenzen, self.regeln, self.planen):
+        for seite in (self.daten, self.konferenzen, self.lehrkraefte, self.regeln, self.planen):
             seite.hinweis.connect(self.statusBar().showMessage)
         self.konferenzen.auswahl_geaendert.connect(self._auswahl_geaendert)
+        self.lehrkraefte.aenderung.connect(self._zuordnung_geaendert)
+        self.lehrkraefte.neu_planen_gewuenscht.connect(self._neu_planen)
+        self.planen.teil_gescheitert.connect(lambda _p: self.lehrkraefte.aktualisieren())
         self.planen.plan_fertig.connect(self._plan_fertig)
         self.planen.laeuft_geaendert.connect(self._laeuft_geaendert)
         self.ergebnis.export_gewuenscht.connect(self.exportieren)
@@ -76,6 +89,7 @@ class Hauptfenster(QMainWindow):
         geladen = self.sitzung.ergebnis is not None
         laeuft = self.planen.laeuft
         self.reiter.setTabEnabled(SEITE_KONFERENZEN, geladen and not laeuft)
+        self.reiter.setTabEnabled(SEITE_LEHRKRAEFTE, geladen and not laeuft)
         self.reiter.setTabEnabled(SEITE_REGELN, geladen and not laeuft)
         self.reiter.setTabEnabled(SEITE_PLANEN, geladen)
         self.reiter.setTabEnabled(SEITE_ERGEBNIS, self.sitzung.plan is not None)
@@ -86,12 +100,23 @@ class Hauptfenster(QMainWindow):
 
     def _daten_geaendert(self) -> None:
         self.konferenzen.aktualisieren()
+        self.lehrkraefte.aktualisieren()
         self.ergebnis.aktualisieren()
         self._aktualisiere_zustand()
 
     def _auswahl_geaendert(self) -> None:
+        self.lehrkraefte.aktualisieren()
         self.ergebnis.aktualisieren()
         self._aktualisiere_zustand()
+
+    def _zuordnung_geaendert(self) -> None:
+        self.konferenzen.aktualisieren()
+        self._aktualisiere_zustand()
+
+    def _neu_planen(self, teil: bool) -> None:
+        """Wechselt zur Seite „Planen" und startet die (Teil-)Neuplanung (SPEC-0010 FR-08)."""
+        self.reiter.setCurrentIndex(SEITE_PLANEN)
+        self.planen.starte(teil=teil)
 
     def _laeuft_geaendert(self, laeuft: bool) -> None:
         self._aktualisiere_zustand()
@@ -99,6 +124,7 @@ class Hauptfenster(QMainWindow):
             self.statusBar().showMessage("Planung läuft…")
 
     def _plan_fertig(self, plan: Plan) -> None:
+        self.lehrkraefte.aktualisieren()
         self.ergebnis.aktualisieren()
         self._aktualisiere_zustand()
         self.reiter.setCurrentIndex(SEITE_ERGEBNIS)
@@ -131,6 +157,7 @@ class Hauptfenster(QMainWindow):
         self._gemeldete_aenderung = None
         self.regeln.aktualisieren()  # das Profil der Datei kann Regeln umstellen
         self.konferenzen.aktualisieren()
+        self.lehrkraefte.aktualisieren()
         self.daten.aktualisieren()
         self.ergebnis.aktualisieren()
         self._aktualisiere_zustand()

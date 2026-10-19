@@ -26,6 +26,19 @@ Pflicht ist das Blatt `Personen` mit den Spalten `Name`, `Thema 1`, `Thema 2`. O
 Fehlt `Themen`, gelten Wichtigkeit 3, Mindestanzahl 1 und 45 Minuten; fehlen `Zeitslots`, erzeugt man sie in
 der Oberfläche. Überschriften werden unabhängig von Groß-/Kleinschreibung und Leerzeichen erkannt.
 
+## Lehrerliste und Konferenzen
+
+Die Software liest auch eine Lehrerliste (Spalten Nachname, Vorname, Fachkonferenz I–III, Vorsitzende) und ein
+Blatt `Konferenzen` mit festen Terminen (Konferenz, Tag, Start, Ende, optional Hauptkonferenz, Wichtigkeit,
+Mindestanzahl). Ablauf in der Oberfläche:
+
+1. **Daten:** Datei laden; uneinheitliche Konferenznamen im Reiter „Normalisierung" zuordnen und bestätigen.
+2. **Konferenzen:** die stattfindenden Konferenzen auswählen; wer eine verliert, behält die übrigen.
+3. **Lehrkräfte:** Konferenzen und Rangfolge, Vorsitz, gesperrte und feste Termine einzeln oder für mehrere
+   Lehrkräfte ändern; „Markierte neu verplanen" berechnet nur die geänderten Lehrkräfte neu.
+4. **Regeln**, **Planen**, **Ergebnis** und Export wie zuvor. Bei gleichzeitigen Konferenzen gewinnt die
+   höhere Rangfolge (Fachkonferenz I vor II vor III).
+
 ## Regeln erweitern
 
 Eine Restriktion ist eine Klasse mit eindeutigem Namen (`konfiplaner.restriktionen.Restriktion`), registriert per

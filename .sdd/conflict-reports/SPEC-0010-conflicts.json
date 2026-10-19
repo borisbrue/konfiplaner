@@ -1,0 +1,128 @@
+{
+  "spec_id": "SPEC-0010",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0010-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-03",
+      "conflicting_contract": "SPEC-0006:FR-08",
+      "detail": "SPEC-0010 FR-03 (Vorsitz ändern über Auswahl aus den Personen oder 'keiner') löst dasselbe Problem wie SPEC-0006 FR-08 (Spalte 'Vorsitz' in der Themen-Tabelle mit Auswahl aus den Personen oder 'keiner'); es gibt zwei GUI-Wege, den Vorsitz zu setzen, und es ist offen, welcher gilt und ob SPEC-0010 den Vorsitz als persistente Änderung (FR-10) neben dem Datenstand der Themen-Tabelle führt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt/nachgezogen: SPEC-0010 ändert die Eingabezuordnung, nicht den berechneten Plan (SPEC-0005 Nicht-Ziele präzisiert); Vorsitz, Sperren und Fixierungen nutzen den bestehenden Regelmechanismus (SPEC-0003, SPEC-0006), Fixierungen als Planer-Parameter (SPEC-0002 FR-15); Auswahl wirkt nach manueller Zuordnung (SPEC-0009 FR-02).",
+        "resolved_at": "2026-10-19T20:11:37Z"
+      }
+    },
+    {
+      "id": "CF-0010-R002",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0003:FR-04",
+      "detail": "SPEC-0010 FR-04 (gesperrte Termine je Lehrkraft) wirkt über die Regel 'verfuegbarkeit', obwohl SPEC-0002 FR-01 und SPEC-0001 Verfügbarkeit bereits als Personenattribut aus dem Import führen; die Spec legt nicht fest, wie sich gesperrte Termine zu importierten Verfügbarkeiten verhalten (zwei Quellen für dieselbe Sperrinformation).",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt/nachgezogen: SPEC-0010 ändert die Eingabezuordnung, nicht den berechneten Plan (SPEC-0005 Nicht-Ziele präzisiert); Vorsitz, Sperren und Fixierungen nutzen den bestehenden Regelmechanismus (SPEC-0003, SPEC-0006), Fixierungen als Planer-Parameter (SPEC-0002 FR-15); Auswahl wirkt nach manueller Zuordnung (SPEC-0009 FR-02).",
+        "resolved_at": "2026-10-19T20:11:38Z"
+      }
+    },
+    {
+      "id": "CF-0010-R003",
+      "type": "redundancy",
+      "severity": "medium",
+      "new_contract": "FR-06",
+      "conflicting_contract": "SPEC-0002:FR-15",
+      "detail": "SPEC-0002 FR-15 beschreibt bereits die optionalen 'Fixierungen' (feste Teilnahmen, feste Startslots) des Planers mit Regel 'fixierung', und SPEC-0010 FR-06 definiert dieselbe Schnittstelle erneut; die Definition sollte nur an einer Stelle stehen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt/nachgezogen: SPEC-0010 ändert die Eingabezuordnung, nicht den berechneten Plan (SPEC-0005 Nicht-Ziele präzisiert); Vorsitz, Sperren und Fixierungen nutzen den bestehenden Regelmechanismus (SPEC-0003, SPEC-0006), Fixierungen als Planer-Parameter (SPEC-0002 FR-15); Auswahl wirkt nach manueller Zuordnung (SPEC-0009 FR-02).",
+        "resolved_at": "2026-10-19T20:11:38Z"
+      }
+    },
+    {
+      "id": "CF-0010-R004",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-11",
+      "conflicting_contract": "SPEC-0002:FR-13",
+      "detail": "SPEC-0010 FR-11 (Startslots variabler Konferenzen bleiben bei Teilneuplanung erhalten) überschneidet sich mit den festen Startslots in SPEC-0002 FR-15 und der Festtermin-Logik in SPEC-0002 FR-13/SPEC-0008 FR-04, die ebenfalls bestimmen, wann Termine nicht vom Solver verschoben werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt/nachgezogen: SPEC-0010 ändert die Eingabezuordnung, nicht den berechneten Plan (SPEC-0005 Nicht-Ziele präzisiert); Vorsitz, Sperren und Fixierungen nutzen den bestehenden Regelmechanismus (SPEC-0003, SPEC-0006), Fixierungen als Planer-Parameter (SPEC-0002 FR-15); Auswahl wirkt nach manueller Zuordnung (SPEC-0009 FR-02).",
+        "resolved_at": "2026-10-19T20:11:38Z"
+      }
+    },
+    {
+      "id": "CF-0010-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0009:FR-02",
+      "detail": "SPEC-0010 FR-01 ('Änderung gilt vor der Konferenzauswahl') und SPEC-0009 FR-02 (abgewählte Konferenzen entfallen auch aus manuell zugeordneten) regeln dieselbe Reihenfolge von Zuordnung und Auswahl doppelt; die Rangfolge-Nachrückregel steht in beiden Specs.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt/nachgezogen: SPEC-0010 ändert die Eingabezuordnung, nicht den berechneten Plan (SPEC-0005 Nicht-Ziele präzisiert); Vorsitz, Sperren und Fixierungen nutzen den bestehenden Regelmechanismus (SPEC-0003, SPEC-0006), Fixierungen als Planer-Parameter (SPEC-0002 FR-15); Auswahl wirkt nach manueller Zuordnung (SPEC-0009 FR-02).",
+        "resolved_at": "2026-10-19T20:11:39Z"
+      }
+    },
+    {
+      "id": "CF-0010-R006",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-08",
+      "conflicting_contract": "SPEC-0009:FR-04",
+      "detail": "SPEC-0009 FR-04/FR-08 (Neu zuordnen, Plan verwerfen bei Auswahländerung) und SPEC-0010 FR-07/FR-08 (Markierung 'neu zu verplanen', Teilneuplanung mit bisherigem Plan) behandeln beide, welche Lehrkräfte nach einer Änderung neu verplant werden und was mit dem vorhandenen Plan geschieht; unklar ist, ob eine Auswahländerung (Plan verworfen) die Teilneuplanung auf vollständige Planung zurückfallen lässt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt/nachgezogen: SPEC-0010 ändert die Eingabezuordnung, nicht den berechneten Plan (SPEC-0005 Nicht-Ziele präzisiert); Vorsitz, Sperren und Fixierungen nutzen den bestehenden Regelmechanismus (SPEC-0003, SPEC-0006), Fixierungen als Planer-Parameter (SPEC-0002 FR-15); Auswahl wirkt nach manueller Zuordnung (SPEC-0009 FR-02).",
+        "resolved_at": "2026-10-19T20:11:39Z"
+      }
+    },
+    {
+      "id": "CF-0010-R007",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-12",
+      "conflicting_contract": "SPEC-0005:FR-10",
+      "detail": "SPEC-0010 FR-12 (Seite 'Lehrkräfte' mit Dialog zum Bearbeiten des Vorsitzes) und SPEC-0005 FR-10 (Seite 'Daten' ergänzt Vorsitz je Thema) bieten zwei GUI-Seiten für Vorsitz-Daten, ebenso FR-01 (Schritte) und FR-11 (Sitzung) die Zustandslogik, die SPEC-0010 FR-09/FR-10 für Änderungen und Persistenz erneut beschreibt, statt sie dort zu verankern.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt/nachgezogen: SPEC-0010 ändert die Eingabezuordnung, nicht den berechneten Plan (SPEC-0005 Nicht-Ziele präzisiert); Vorsitz, Sperren und Fixierungen nutzen den bestehenden Regelmechanismus (SPEC-0003, SPEC-0006), Fixierungen als Planer-Parameter (SPEC-0002 FR-15); Auswahl wirkt nach manueller Zuordnung (SPEC-0009 FR-02).",
+        "resolved_at": "2026-10-19T20:11:40Z"
+      }
+    },
+    {
+      "id": "CF-0010-R008",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-10",
+      "conflicting_contract": "SPEC-0005:FR-07",
+      "detail": "SPEC-0010 FR-10 (Persistenz der Änderungen je Datei) überschneidet sich mit SPEC-0005 FR-07/FR-09 und SPEC-0009 FR-06 (Einstellungsspeicher), die bereits Einstellungen und Abwahl gespeichert halten; es sollte klar sein, dass derselbe Speicher genutzt wird.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt/nachgezogen: SPEC-0010 ändert die Eingabezuordnung, nicht den berechneten Plan (SPEC-0005 Nicht-Ziele präzisiert); Vorsitz, Sperren und Fixierungen nutzen den bestehenden Regelmechanismus (SPEC-0003, SPEC-0006), Fixierungen als Planer-Parameter (SPEC-0002 FR-15); Auswahl wirkt nach manueller Zuordnung (SPEC-0009 FR-02).",
+        "resolved_at": "2026-10-19T20:11:40Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-10-19T20:12:03Z"
+}

@@ -10,7 +10,7 @@ from dataclasses import dataclass, replace
 from ortools.sat.python import cp_model
 
 from konfiplaner.modell import Modell, Plan, Termin, Verstoss
-from konfiplaner.planer import Abbruchsignal, Fortschritt, PlanerOptionen
+from konfiplaner.planer import Abbruchsignal, Fixierungen, Fortschritt, PlanerOptionen
 from konfiplaner.restriktionen import STANDARD_REGISTRY, Konfiguration, Registry
 from konfiplaner.restriktionen.kontext import Term, Var
 
@@ -29,8 +29,9 @@ class _Verletzung:
 class _CpSatKontext:
     """Adapter: übersetzt `Planungskontext` auf ein CP-SAT-Modell."""
 
-    def __init__(self, modell: Modell, mit_annahmen: bool) -> None:
+    def __init__(self, modell: Modell, mit_annahmen: bool, fixierungen: Fixierungen | None = None) -> None:
         self.modell = modell
+        self._fix = fixierungen or Fixierungen()
         self.cp = cp_model.CpModel()
         self._mit_annahmen = mit_annahmen
         self._k: dict[str, int] = {}
@@ -63,6 +64,9 @@ class _CpSatKontext:
                 else:  # der Vorsitz sitzt in jedem Termin: die übrigen müssen nur Mindestanzahl - 1 stellen
                     moegliche = (n - 1) // max(1, t.mindestanzahl - 1)
                 self._k[t.name] = max(1, min(MAX_TERMINE_JE_THEMA, moegliche))
+            geplant = self._geplante_starts(t.name, fest)
+            if geplant:
+                self._k[t.name] = max(self._k[t.name], len(geplant))
             frei = {} if fest else m.bloecke(t.name)
             if not fest and not frei:
                 self.keine_startslots.append(t.name)
@@ -72,12 +76,16 @@ class _CpSatKontext:
                 self._aktiv[t.name, j] = a
                 if fest:
                     cp.Add(a == 1)
+                elif geplant and j >= len(geplant):
+                    cp.Add(a == 0)  # der bisherige Plan hatte weniger Termine
                 starts = []
                 for s in self._bloecke[t.name, j]:
                     v = cp.NewBoolVar(f"start_{t.name}_{j}_{s}")
                     self._start[t.name, j, s] = v
                     starts.append(v)
                 cp.Add(sum(starts) == a)
+                if geplant and not fest and j < len(geplant):
+                    cp.Add(self._start[t.name, j, geplant[j]] == 1)  # Startslot wie im bisherigen Plan
                 if j:
                     cp.Add(self._aktiv[t.name, j - 1] >= a)
                 for p in m.personen_zu(t.name):
@@ -88,6 +96,14 @@ class _CpSatKontext:
                 if p.name != t.vorsitz:  # der Vorsitz ist in allen Terminen des Themas
                     cp.Add(sum(self._teil[p.name, t.name, j] for j in range(self._k[t.name])) <= 1)
             self._ziel.extend(TERMIN_STRAFE * self._aktiv[t.name, j] for j in range(self._k[t.name]))
+
+    def _geplante_starts(self, thema: str, fest: list[tuple[int, int]]) -> tuple[int, ...]:
+        """Feste Startslots aus den Fixierungen; leer, wenn es keine gibt oder sie nicht (mehr) passen."""
+        starts = tuple(sorted(self._fix.termine.get(thema, ())))
+        if not starts or fest:
+            return starts if not fest else ()
+        frei = self.modell.bloecke(thema)
+        return starts if all(s in frei for s in starts) else ()
 
     # ── Planungskontext ──────────────────────────────────────────────────────
     def termine(self, thema: str) -> range:
@@ -164,6 +180,29 @@ class _CpSatKontext:
     def setze_regel(self, name: str, typ: str, gewicht: float) -> None:
         self._regel, self._typ, self._gewicht = name, typ, gewicht
 
+    def fixiere(self) -> None:
+        """Harte Fixierungen der Teilnahme (SPEC-0010), als Regel `fixierung` diagnostizierbar."""
+        for person, termine in self._fix.teilnahmen.items():
+            for (thema, start), wert in termine.items():
+                j = next((j for (t, j), bl in self._bloecke.items() if t == thema and start in bl), None)
+                var = self._teil.get((person, thema, j)) if j is not None else None
+                verb = "nimmt an" if wert else "nimmt nicht an"
+                text = f"{person} {verb} {thema} (Slot {start}) teil"
+                if var is None:
+                    if (
+                        wert
+                    ):  # Teilnahme vorgegeben, aber nicht möglich (keine Mitgliedschaft, kein solcher Termin)
+                        self._pflicht(self.cp.NewConstant(0), 1, text)
+                    continue
+                self._pflicht(var, 1 if wert else 0, text)
+
+    def _pflicht(self, var, wert: int, text: str) -> None:
+        lit = self.cp.NewBoolVar("") if self._mit_annahmen else None
+        c = self.cp.Add(var == wert)
+        if lit is not None:
+            c.OnlyEnforceIf(lit)
+            self.annahmen.append((lit, "fixierung", text))
+
     def schliesse(self) -> None:
         self.cp.Minimize(sum(self._ziel))
         if self._mit_annahmen:
@@ -200,6 +239,7 @@ class CpSatPlaner:
         optionen: PlanerOptionen | None = None,
         fortschritt: Callable[[Fortschritt], None] | None = None,
         abbruch: Abbruchsignal | None = None,
+        fixierungen: Fixierungen | None = None,
     ) -> Plan:
         optionen = optionen or PlanerOptionen()
         start = time.perf_counter()
@@ -209,7 +249,7 @@ class CpSatPlaner:
             r.pruefe_parameter(e.parameter)
 
         warnungen = [f"{p} hat keine Verfügbarkeit" for p, s in modell.verfuegbarkeit.items() if not s]
-        ctx = self._baue(modell, regeln, mit_annahmen=False)
+        ctx = self._baue(modell, regeln, mit_annahmen=False, fixierungen=fixierungen)
         # Das Zeitlimit gilt für den gesamten Aufruf, nicht nur für die Suche
         rest = max(1.0, optionen.zeitlimit_s - (time.perf_counter() - start))
         solver = self._solver(replace(optionen, zeitlimit_s=rest))
@@ -226,7 +266,7 @@ class CpSatPlaner:
             )
         else:
             if status == cp_model.INFEASIBLE:
-                gruende = self._diagnose(modell, regeln, optionen)
+                gruende = self._diagnose(modell, regeln, optionen, fixierungen)
             elif abbruch is not None and abbruch.is_set():
                 gruende = ["Abgebrochen, bevor ein Plan gefunden wurde"]
             else:
@@ -236,11 +276,12 @@ class CpSatPlaner:
         return plan
 
     # ── intern ───────────────────────────────────────────────────────────────
-    def _baue(self, modell, regeln, mit_annahmen: bool) -> _CpSatKontext:
-        ctx = _CpSatKontext(modell, mit_annahmen)
+    def _baue(self, modell, regeln, mit_annahmen: bool, fixierungen=None) -> _CpSatKontext:
+        ctx = _CpSatKontext(modell, mit_annahmen, fixierungen)
         for e, r in regeln:
             ctx.setze_regel(e.name, e.typ, e.gewicht)
             r.anwenden(ctx, e.parameter)
+        ctx.fixiere()
         ctx.schliesse()
         return ctx
 
@@ -288,14 +329,14 @@ class CpSatPlaner:
                 plan.verstoesse.extend(r.erklaere(plan, e.parameter))
         return plan
 
-    def _diagnose(self, modell, regeln, optionen) -> list[str]:
+    def _diagnose(self, modell, regeln, optionen, fixierungen=None) -> list[str]:
         gruende = []
         for name in modell.bloecke_fehlen():
             t = modell.thema(name)
             gruende.append(
                 f"Regel themenabdeckung: Thema {name} (Dauer {t.dauer_min} min) passt in keinen Zeitblock"
             )
-        ctx = self._baue(modell, regeln, mit_annahmen=True)
+        ctx = self._baue(modell, regeln, mit_annahmen=True, fixierungen=fixierungen)
         solver = self._solver(optionen)
         if solver.Solve(ctx.cp) == cp_model.INFEASIBLE:
             kern = set(solver.SufficientAssumptionsForInfeasibility())

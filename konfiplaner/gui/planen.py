@@ -21,6 +21,7 @@ from konfiplaner.modell import Plan
 
 class PlanenSeite(QWidget):
     plan_fertig = Signal(object)
+    teil_gescheitert = Signal(object)  # Teilneuplanung ohne Ergebnis; der bisherige Plan bleibt
     laeuft_geaendert = Signal(bool)
     hinweis = Signal(str)
 
@@ -28,6 +29,7 @@ class PlanenSeite(QWidget):
         super().__init__()
         self.sitzung = sitzung
         self._lauf: PlanungsLauf | None = None
+        self._teil = False
         self.voraussetzung = QLabel("")
         self.voraussetzung.setWordWrap(True)
         self.zeitlimit = QDoubleSpinBox()
@@ -77,17 +79,19 @@ class PlanenSeite(QWidget):
         self.sitzung.zeitlimit_s = float(wert)
         self.sitzung.speichere()
 
-    def starte(self) -> None:
+    def starte(self, teil: bool = False) -> None:
+        """Startet die Planung; `teil`: nur die markierten Lehrkräfte neu (SPEC-0010 FR-08)."""
         if self.laeuft or not self.sitzung.planbar:
             return
-        self._lauf = PlanungsLauf(self.sitzung)
+        self._teil = teil
+        self._lauf = PlanungsLauf(self.sitzung, teil)
         self._lauf.arbeiter.fortschritt.connect(self._fortschritt)
         self._lauf.arbeiter.fertig.connect(self._fertig)
         self._lauf.arbeiter.fehler.connect(self._fehler)
         self.planen.setEnabled(False)
         self.abbrechen.setEnabled(True)
         self.balken.setRange(0, 0)
-        self.stand.setText("Planung läuft…")
+        self.stand.setText("Teilneuplanung läuft…" if teil else "Planung läuft…")
         self.laeuft_geaendert.emit(True)
         self._lauf.start()
 
@@ -116,7 +120,15 @@ class PlanenSeite(QWidget):
         self.laeuft_geaendert.emit(False)
 
     def _fertig(self, plan: Plan) -> None:
+        teil = self._teil
         self._beenden()
+        if teil and plan.status == "kein_plan" and self.sitzung.plan is not plan:
+            # Die Teilneuplanung ging nicht auf: Plan und Markierungen bleiben, Gründe anzeigen
+            grund = "; ".join(plan.begruendung[:3])
+            self.stand.setText(f"Teilneuplanung nicht möglich: {grund}")
+            self.hinweis.emit("Teilneuplanung nicht möglich – Plan und Markierungen bleiben unverändert")
+            self.teil_gescheitert.emit(plan)
+            return
         zusatz = {
             "optimal": "optimal",
             "machbar": "nicht optimal (Zeitlimit oder Abbruch)",
