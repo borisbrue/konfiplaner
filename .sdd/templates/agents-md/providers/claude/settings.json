@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sdd *)",
+      "Bash(python -m pytest *)",
+      "Bash(pytest *)",
+      "Bash(.venv/bin/pytest *)",
+      "Bash(.venv/bin/sdd *)",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git branch *)",
+      "Bash(git commit *)",
+      "Bash(git stash *)",
+      "Bash(git merge *)",
+      "Bash(git fetch *)",
+      "Bash(gh pr *)",
+      "Bash(uv tool *)",
+      "Bash(uv build *)",
+      "Bash(podman inspect *)",
+      "Bash(podman ps *)",
+      "Bash(podman exec *)",
+      "Bash(docker inspect *)",
+      "Bash(docker ps *)",
+      "Bash(docker exec *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/autonomous-guardrail.sh\"",
+            "timeout": 10,
+            "statusMessage": "Guardrail-Check"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,109 @@
+---
+id: SPEC-0005
+title: "Desktop-GUI"
+type: feature
+status: draft
+owner: "Boris Brünen"
+created: 2026-10-19
+updated: 2026-10-19
+version: 0.1.0
+priority: medium
+tags: [gui, pyside6]
+depends_on: ["SPEC-0001", "SPEC-0002", "SPEC-0003", "SPEC-0004"]
+contracts: []
+tests: []
+---
+
+# Desktop-GUI
+
+> **Status:** draft · **Owner:** Boris Brünen · **Version:** 0.1.0
+
+## 1. Kontext & Motivation
+
+Planer:innen sollen ohne Kommandozeile arbeiten: Excel laden, Regeln wählen, planen, Ergebnis prüfen, exportieren.
+
+## 2. Zielsetzung
+
+**Primärziel:** Eine Desktop-Anwendung (PySide6/Qt) bedient den gesamten Ablauf Import → Planung → Export.
+
+**Erfolgskriterien (messbar):**
+- [ ] Kompletter Durchlauf mit ≤ 5 Klicks aus gültiger Excel-Datei.
+- [ ] GUI bleibt während der Planung bedienbar (Solver in Hintergrund-Thread, Abbruch möglich).
+
+**Nicht-Ziele (explizit):**
+- Kein Mehrbenutzer-/Web-Betrieb.
+- Kein vollständiger manueller Plan-Editor in v1 (nur Ansicht; Drag-and-Drop später).
+
+## 3. User Stories
+
+| ID    | Als ...   | möchte ich ...                          | um ...                                  |
+|-------|-----------|-----------------------------------------|-----------------------------------------|
+| US-01 | Planer:in | Excel-Datei laden und Fehler sehen      | die Daten korrigieren zu können         |
+| US-02 | Planer:in | Regeln an-/abschalten und gewichten     | Planvarianten zu erzeugen               |
+| US-03 | Planer:in | Fortschritt sehen und abbrechen         | bei langen Läufen die Kontrolle zu behalten |
+| US-04 | Planer:in | den Plan nach Termin und Person ansehen | ihn zu prüfen, bevor ich exportiere     |
+
+## 4. Funktionale Anforderungen
+
+- **FR-01:** Hauptfenster mit Schritten: Daten laden, Regeln, Planen, Ergebnis, Export.
+- **FR-02:** Fehlerliste aus SPEC-0001 wird tabellarisch angezeigt; Klick markiert die Quelle.
+- **FR-03:** Regelverwaltung listet alle registrierten Restriktionen (SPEC-0003) mit Schalter und Gewicht.
+- **FR-04:** Planung läuft in einem Worker-Thread mit Fortschritt, Zeitlimit und Abbrechen.
+- **FR-05:** Ergebnisansichten: nach Termin, nach Person, nach Thema; Verletzungen hervorgehoben.
+- **FR-06:** Export über Dialog (SPEC-0004).
+- **FR-07:** Letzte Einstellungen (Dateipfad, Regelkonfiguration) werden gespeichert.
+- **FR-08:** Die GUI enthält keine Fachlogik; sie ruft nur die Library-Schnittstellen auf.
+
+## 5. Nicht-funktionale Anforderungen
+
+| Kategorie     | Anforderung                                           |
+|---------------|-------------------------------------------------------|
+| Plattform     | Linux, Windows, macOS                                 |
+| Accessibility | Tastaturbedienbar, Kontrast gemäß Systemtheme         |
+| Sprache       | Oberfläche deutsch                                    |
+| Datenschutz   | Keine Netzwerkzugriffe                                |
+
+## 6. Akzeptanzkriterien (Gherkin)
+
+```gherkin
+Feature: GUI-Ablauf
+
+  Scenario: Voller Durchlauf
+    Given die App ist gestartet
+    When ich eine gültige Excel-Datei lade und "Planen" wähle
+    Then sehe ich den Plan nach Termin und Person
+    And kann ich ihn als Excel exportieren
+
+  Scenario: Planung abbrechen
+    Given eine laufende Planung
+    When ich "Abbrechen" wähle
+    Then bleibt die GUI bedienbar und ich erhalte die beste bisherige Lösung
+```
+
+## 7. Edge Cases & Fehlerfälle
+
+- Datei während der Arbeit geändert → Neuladen anbieten.
+- Hohe DPI/kleine Bildschirme.
+
+## 8. Contracts (was wird garantiert)
+
+| Contract-ID | Typ      | Was wird garantiert?                  |
+|-------------|----------|---------------------------------------|
+| CON-XXXX    | behavior | Gherkin-Abläufe der GUI               |
+
+## 9. Tests (wie wird verifiziert)
+
+| Test-ID  | Level      | Was prüft der Test?                          |
+|----------|------------|----------------------------------------------|
+| TST-XXXX | acceptance | Abläufe per pytest-qt (offscreen)            |
+
+## 10. Offene Fragen
+
+- [ ] Reicht PySide6 (LGPL) oder ist ein anderes Toolkit gewünscht?
+- [ ] Soll v1 schon manuelles Nachjustieren des Plans erlauben?
+
+## 11. Änderungshistorie
+
+| Datum      | Version | Autor        | Änderung            |
+|------------|---------|--------------|---------------------|
+| 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |

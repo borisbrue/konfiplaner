@@ -1,0 +1,198 @@
+version: 1.0.0
+project:
+  name: KonfiPlaner
+  description: Personen zu Terminen zusammenstellen (Excel-Import, OR-Tools-Solver, erweiterbare Restriktionen, Desktop-GUI)
+  # sdd init traegt hier den Namen aus `git config user.name` ein. Frueher
+  # stand ein fester Name im Blueprint und landete in jedem Projekt (#116).
+  owners:
+  - "borisbrue"
+ids:
+  spec_prefix: SPEC
+  contract_prefix: CON
+  test_prefix: TST
+  adr_prefix: ADR
+  holdout_prefix: HOL
+  padding: 4
+spec_lifecycle:
+- draft
+- review
+- approved
+- in-progress
+- implemented
+- deprecated
+contract_formats:
+  api:
+  - openapi
+  - asyncapi
+  - graphql
+  - grpc
+  data:
+  - json-schema
+  - avro
+  - protobuf
+  behavior:
+  - gherkin
+  - markdown
+  performance:
+  - slo-yaml
+validation:
+  require_contract_per_spec: true
+  require_test_per_contract: true
+  fail_on_orphans: true
+  allowed_statuses_for_implementation:
+  - approved
+  - implemented
+compliance:
+  # Schalter der Compliance-Kette (finalize/spec approve). Default jeweils true.
+  fr_coverage_check: true       # jede FR braucht einen zugeordneten Test
+  task_completion_check: true   # alle Tasks der Spec muessen abgeschlossen sein
+  type_aware_test_check: true   # typabhaengige Testebenen (webui/api)
+  route_registration_check: true # neue Routen sind registriert
+  post_commit_hook: true        # pre-commit-Gate aktiv
+adr:
+  output_dir: docs/adr
+traceability:
+  output_format: markdown
+  output_path: docs/traceability.md
+evaluator:
+  model: claude-sonnet-4-6
+  base_url: http://localhost:8000
+  timeout_per_scenario: 60
+  # Wiederholungen pro Legacy-Szenario (Prosa-Format). 1, weil der
+  # Legacy-Pfad den Zustand zwischen Laeufen nicht zuruecksetzt:
+  # Lauf 2 sieht, was Lauf 1 angelegt hat. Erst mit Isolierung erhoehen.
+  runs_per_scenario: 1
+  pass_threshold: 2
+  cost_alert_usd: 1.0
+  container:
+    # Befehl zum Starten der App im Container (projektspezifisch anpassen!)
+    start_command: ["python", "-m", "your_app.main", "--port", "8080"]
+    app_port: 8080        # Port der App im Container
+    host_port: 18080      # Freigegebener Port auf dem Host
+    # Adresse, unter der der Port erreichbar ist. 127.0.0.1 statt
+    # localhost, weil der Port per -p auf IPv4 veroeffentlicht wird und
+    # localhost auf manchen Systemen nur nach ::1 aufloest.
+    host: 127.0.0.1
+    health_path: /health  # GET → 200 bedeutet "bereit"
+    health_timeout_secs: 30
+    env:
+      APP_ENV: test
+orchestrator:
+  # Shell-Befehl, der in der Finalisierung vor den Tests laeuft (im Dev-Container,
+  # bzw. auf dem Host bei docker.compose_file). Leer: kein Build-Schritt.
+  # --build-cmd bei sdd orchestrate / sdd start --auto ueberschreibt ihn.
+  build_command: ''
+  auto_merge: false
+  auto_merge_strategy: label
+  max_retries: 3
+maintenance:
+  stale_after_weeks: 4
+obsidian:
+  # Leer: die Obsidian-Integration ist aus, bis ein Vault gesetzt ist — `sdd
+  # obsidian` meldet dann "obsidian.vault_path nicht konfiguriert" (SPEC-0009).
+  # Frueher stand hier der Vault-Pfad eines anderen Rechners (#116).
+  vault_path: ''
+  subfolder: SDD
+  watch_interval_secs: 5
+  auto_wiki_links: true
+test_runner:
+  # Fuer pytest-artige Kommandos (pytest, uv run pytest, python -m pytest)
+  # haengt die Finalisierung `tests/ -x --tb=short` an, fuer npm `test`;
+  # alles andere laeuft wie hier eingetragen. extra_args kommt immer dazu.
+  command: pytest
+  extra_args: []
+  timeout_per_spec: 120
+cost_estimation:
+  model_prices:
+    claude-haiku-4-5-20251001:
+      input_per_million: 0.8
+      output_per_million: 4.0
+      cache_write_per_million: 1.0
+      cache_read_per_million: 0.08
+    claude-sonnet-4-6:
+      input_per_million: 3.0
+      output_per_million: 15.0
+      cache_write_per_million: 3.75
+      cache_read_per_million: 0.3
+    default:
+      input_per_million: 3.0
+      output_per_million: 15.0
+      cache_write_per_million: 3.75
+      cache_read_per_million: 0.3
+  budget_alert_usd: 5.0
+  default_model: claude-haiku-4-5-20251001
+skills:
+  provider: claude
+  version: 0.1.0
+solid_gate:
+  enabled: true
+  mode: warn
+pattern_suggestions:
+  enabled: true
+  max_suggestions: 4
+  source: refactoring-guru
+llm:
+  # Zeitlimit fuer einen einzelnen LLM-Aufruf (Sekunden).
+  # Der Regression-Check braucht fuer groessere Specs mehrere Minuten.
+  timeout_seconds: 600
+  # Zeitlimit fuer die Testcode-Generierung in `sdd start` (Sekunden).
+  # Bei umfangreichen Test-Dokumenten und claude-cli kann 300 knapp sein.
+  test_generation_timeout: 300
+  # Keyfreier Betrieb: alle Komponenten laufen über die Claude-Code-CLI
+  # (`claude --print`) statt über die Anthropic-API. Kein ANTHROPIC_API_KEY nötig.
+  # Für API-Betrieb: provider auf `anthropic` setzen und model/api_key ergänzen.
+  completion:
+    provider: claude-cli
+  analyzer:
+    provider: claude-cli
+  evaluator:
+    provider: claude-cli
+  ai_routes:
+    provider: claude-cli
+  orchestrator:
+    provider: claude-cli
+  # Lokales LLM für task_routing (SPEC-0045) – openai-compatible (Ollama, LM Studio, llama.cpp)
+  # local_llm:
+  #   provider: openai-compat
+  #   base_url: "http://localhost:11434/v1"
+  #   model: "qwen2.5-coder:14b"
+  #   api_key: "lm-studio"          # optional; default lm-studio
+
+task_routing:
+  enabled: false                   # true = lokales LLM für triviale Tasks nutzen
+  complexity_threshold: 30         # Tasks mit score <= threshold → executor: local
+  max_retries: 3                   # Versuche vor Eskalation zu Claude
+  max_concurrent: 3                # gleichzeitige async Tasks (Semaphore)
+
+docker:
+  # Abzweigpunkt fuer den Entwicklungsbranch von `sdd start`.
+  # Ohne Angabe wird vom aktuellen HEAD abgezweigt — noetig, wenn
+  # eine Spec auf einer noch nicht gemergten Vorgaengerin aufbaut.
+  # base_branch: main
+  # Ohne Angabe wird die installierte Runtime erkannt (docker bevorzugt,
+  # sonst podman). Zum Festnageln die Zeile einkommentieren:
+  # runtime: docker        # docker | podman
+  image: sdd-dev:latest
+  dockerfile: .sdd/Dockerfile
+  registry:
+    url: ''
+    auth_env: ''
+  compose_file: ''
+  log_stream:
+    enabled: true
+    max_lines: 500
+pwa:
+  auth:
+    # Leer lassen. Der Token ist die Bearer-Credential fuer /api/remote/run und
+    # den Chat-WebSocket — ein fester Wert im Blueprint waere fuer jedes
+    # erzeugte Projekt derselbe und stuende in dessen Historie.
+    #
+    # Erzeugt wird er beim ersten Koppeln: POST /api/auth/generate-token
+    # (im Web-UI der Knopf im Server-Info-Panel) legt secrets.token_hex(32) an,
+    # solange keiner konfiguriert ist. Ein vorbelegter Wert liess diesen Aufruf
+    # dauerhaft mit 409 token_already_exists scheitern und blockierte damit
+    # genau den Bootstrap, fuer den er gedacht ist.
+    #
+    # "Kein Token konfiguriert" ist ein vorgesehener Zustand: CON-0085 G-04
+    # beschreibt ihn, und alle Bearer-Pruefungen weisen ohne Token ab.
+    token: ""
