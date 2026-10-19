@@ -1,22 +1,45 @@
 ---
 id: SPEC-0002
-title: "Domänenmodell und Planungs-Solver"
+title: Domänenmodell und Planungs-Solver
 type: feature
-status: draft
-owner: "Boris Brünen"
+status: implemented
+owner: Boris Brünen
 created: 2026-10-19
-updated: 2026-10-19
+updated: '2026-10-19'
 version: 0.3.0
 priority: high
-tags: [solver, ortools, core]
-depends_on: ["SPEC-0003"]
-contracts: ["CON-0003", "CON-0004", "CON-0005"]
-tests: ["TST-0003", "TST-0004", "TST-0005"]
+tags:
+- solver
+- ortools
+- core
+depends_on:
+- SPEC-0003
+fr_test_map:
+  FR-01: TST-0003
+  FR-02: TST-0004
+  FR-03: TST-0004
+  FR-04: TST-0004
+  FR-05: TST-0004
+  FR-06: TST-0004
+  FR-07: TST-0004
+  FR-08: TST-0006
+  FR-09: TST-0004
+  FR-10: TST-0005
+  FR-11: TST-0003
+  FR-12: TST-0004
+contracts:
+- CON-0003
+- CON-0004
+- CON-0005
+tests:
+- TST-0003
+- TST-0004
+- TST-0005
+started_at: '2026-10-19T13:12:27Z'
 ---
-
 # Domänenmodell und Planungs-Solver
 
-> **Status:** draft · **Owner:** Boris Brünen · **Version:** 0.3.0
+> **Status:** implemented · **Owner:** Boris Brünen · **Version:** 0.3.0
 
 ## 1. Kontext & Motivation
 

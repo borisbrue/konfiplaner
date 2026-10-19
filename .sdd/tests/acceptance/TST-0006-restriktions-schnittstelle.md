@@ -5,8 +5,8 @@ title: "Restriktions-Schnittstelle"
 level: acceptance            # unit | integration | contract | acceptance | performance | property
 spec: SPEC-0003
 contract: CON-0006
-status: planned            # planned | implemented | passing | failing | skipped
-framework: "pytest-bdd"              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
+status: passing            # planned | implemented | passing | failing | skipped
+framework: "pytest"              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
 artifact: "tests/acceptance/test_restriktions_schnittstelle.py"
 tags: []
 ---

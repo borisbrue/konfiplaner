@@ -13,7 +13,7 @@ tests: ["TST-0004"]
 
 # Contract: Planungsverhalten
 
-> **Spec:** SPEC-0002 · **Typ:** Verhalten (Gherkin) · **Status:** review
+> **Spec:** SPEC-0002 · **Typ:** Verhalten (Gherkin) · **Status:** approved
 
 ## Zweck
 

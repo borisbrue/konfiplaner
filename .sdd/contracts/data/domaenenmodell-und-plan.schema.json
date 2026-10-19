@@ -25,7 +25,8 @@
       "items": {
         "type": "string",
         "minLength": 1
-      }
+      },
+      "minItems": 1
     },
     "termine": {
       "type": "array",
@@ -79,7 +80,15 @@
             "type": "string",
             "minLength": 1
           }
-        }
+        },
+        "additionalProperties": false
+      }
+    },
+    "warnungen": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
       }
     }
   },
@@ -90,12 +99,34 @@
           "status": {
             "const": "kein_plan"
           }
-        }
+        },
+        "required": [
+          "status"
+        ]
       },
       "then": {
         "required": [
           "begruendung"
         ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "kein_plan"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "termine": {
+            "maxItems": 0
+          }
+        }
       }
     }
   ]

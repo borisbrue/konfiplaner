@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://konfiplaner.local/schemas/regeln.schema.json",
+  "$id": "https://konfiplaner.local/schemas/regel-konfiguration.schema.json",
   "title": "Regel-Konfiguration",
   "description": "SPEC-0003 / CON-0007. YAML-Konfiguration der Restriktionen (als JSON validiert).",
   "type": "object",

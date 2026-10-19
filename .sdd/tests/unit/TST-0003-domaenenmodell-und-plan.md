@@ -5,7 +5,7 @@ title: "Domänenmodell und Plan"
 level: unit            # unit | integration | contract | acceptance | performance | property
 spec: SPEC-0002
 contract: CON-0003
-status: planned            # planned | implemented | passing | failing | skipped
+status: passing            # planned | implemented | passing | failing | skipped
 framework: "pytest"              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
 artifact: "tests/unit/test_domaenenmodell_und_plan.py"
 tags: []

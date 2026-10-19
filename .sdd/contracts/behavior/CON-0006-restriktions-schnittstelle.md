@@ -13,7 +13,7 @@ tests: ["TST-0006"]
 
 # Contract: Restriktions-Schnittstelle
 
-> **Spec:** SPEC-0003 · **Typ:** Verhalten (Gherkin) · **Status:** review
+> **Spec:** SPEC-0003 · **Typ:** Verhalten (Gherkin) · **Status:** approved
 
 ## Zweck
 

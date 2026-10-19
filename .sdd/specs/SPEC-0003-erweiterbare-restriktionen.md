@@ -1,22 +1,36 @@
 ---
 id: SPEC-0003
-title: "Erweiterbare Restriktionen"
+title: Erweiterbare Restriktionen
 type: feature
-status: draft
-owner: "Boris Brünen"
+status: implemented
+owner: Boris Brünen
 created: 2026-10-19
-updated: 2026-10-19
+updated: '2026-10-19'
 version: 0.3.0
 priority: high
-tags: [restrictions, plugin]
+tags:
+- restrictions
+- plugin
 depends_on: []
-contracts: ["CON-0006", "CON-0007"]
-tests: ["TST-0006", "TST-0007"]
+fr_test_map:
+  FR-01: TST-0007
+  FR-02: TST-0006
+  FR-03: TST-0006
+  FR-04: TST-0006
+  FR-05: TST-0007
+  FR-06: TST-0006
+  FR-07: TST-0007
+contracts:
+- CON-0006
+- CON-0007
+tests:
+- TST-0006
+- TST-0007
+started_at: '2026-10-19T13:12:26Z'
 ---
-
 # Erweiterbare Restriktionen
 
-> **Status:** draft · **Owner:** Boris Brünen · **Version:** 0.3.0
+> **Status:** implemented · **Owner:** Boris Brünen · **Version:** 0.3.0
 
 ## 1. Kontext & Motivation
 

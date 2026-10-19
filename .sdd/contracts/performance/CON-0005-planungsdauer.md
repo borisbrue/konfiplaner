@@ -13,7 +13,7 @@ tests: ["TST-0005"]
 
 # Contract: Planungsdauer
 
-> **Spec:** SPEC-0002 · **Typ:** Performance (SLO) · **Status:** review
+> **Spec:** SPEC-0002 · **Typ:** Performance (SLO) · **Status:** approved
 
 ## Service Level Objectives (SLOs)
 

@@ -5,7 +5,7 @@ title: "Regel-Konfiguration"
 level: unit            # unit | integration | contract | acceptance | performance | property
 spec: SPEC-0003
 contract: CON-0007
-status: planned            # planned | implemented | passing | failing | skipped
+status: passing            # planned | implemented | passing | failing | skipped
 framework: "pytest"              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
 artifact: "tests/unit/test_regel_konfiguration.py"
 tags: []

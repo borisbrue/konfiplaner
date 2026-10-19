@@ -5,7 +5,7 @@ title: "Planungsdauer"
 level: performance            # unit | integration | contract | acceptance | performance | property
 spec: SPEC-0002
 contract: CON-0005
-status: planned            # planned | implemented | passing | failing | skipped
+status: passing            # planned | implemented | passing | failing | skipped
 framework: "pytest"              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
 artifact: "tests/performance/test_planungsdauer.py"
 tags: []

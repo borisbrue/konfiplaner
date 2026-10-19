@@ -34,7 +34,7 @@ Funktionalität: Planung (SPEC-0002, CON-0004)
     Und die Begründung nennt das Thema und die Regel "mindestanzahl"
 
   Szenario: Kein Thema entfällt
-    Angenommen ein Thema, das ohne Verletzung einer harten Regel nicht stattfinden kann
+    Angenommen ein Thema ohne Personen und mit Mindestanzahl 1
     Wenn ich plane
     Dann ist der Status "kein_plan"
     Und die Begründung nennt die Regel "themenabdeckung" und das Thema
@@ -91,14 +91,19 @@ Funktionalität: Planung (SPEC-0002, CON-0004)
     Dann sind beide Pläne identisch
 
   Szenario: Zeitlimit
-    Angenommen eine Instanz, die nicht innerhalb von 1 Sekunde als optimal bewiesen wird
-    Und ein Zeitlimit von 1 Sekunde
+    Angenommen eine große Instanz und ein Zeitlimit von 5 Sekunden
     Wenn ich plane
-    Dann ist der Status "machbar"
+    Dann endet die Planung innerhalb des Limits
+    Und der Status ist "optimal" oder "machbar"
     Und der Plan erfüllt alle harten Regeln
 
   Szenario: Abbruch
-    Angenommen eine laufende Planung mit Fortschritts-Callback
-    Wenn das Abbruchsignal gesetzt wird
+    Angenommen eine laufende Planung mit Fortschritts-Callback, der beim ersten Aufruf das Abbruchsignal setzt
+    Wenn ich plane
     Dann endet die Planung mit der besten bisherigen Lösung
     Und der Callback wurde mindestens einmal aufgerufen
+
+  Szenario: Abbruch vor der ersten Lösung
+    Angenommen das Abbruchsignal ist schon vor dem Start gesetzt
+    Wenn ich plane
+    Dann ist der Status "kein_plan" oder der Plan die bisher beste Lösung

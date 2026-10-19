@@ -13,7 +13,7 @@ tests: ["TST-0007"]
 
 # Contract: Regel-Konfiguration
 
-> **Spec:** SPEC-0003 · **Typ:** Daten (JSON Schema) · **Status:** review
+> **Spec:** SPEC-0003 · **Typ:** Daten (JSON Schema) · **Status:** approved
 
 ## Zweck
 
@@ -24,7 +24,9 @@ Datenform der Regel-Konfiguration (YAML, als JSON Schema validiert).
 Diese Regeln MÜSSEN für jede gültige Instanz gelten:
 
 - **INV-01:** Typ ist `hart`, `weich` oder `aus`.
-- **INV-02:** Gewicht > 0, Standard 1.
+- **INV-02:** Gewicht > 0; Standard 1 setzt der Loader (JSON Schema erzwingt keine Defaults). Bei Typ `hart` oder `aus` wird `gewicht` ignoriert.
+- **INV-03:** `restriktionen` hat mindestens einen Eintrag, jeder Eintrag hat `typ`, unbekannte Felder sind verboten.
+- **Abgrenzung:** Ob ein Regelname registriert ist und ob die Parameter zur Regel passen, prüft die Registry (CON-0006), nicht dieses Schema. Excel-Blatt `Regeln` (SPEC-0003 FR-05) ist nicht v1.
 
 ## Beispiele
 
