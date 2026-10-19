@@ -5,9 +5,9 @@ title: "GUI-Abläufe"
 level: acceptance            # unit | integration | contract | acceptance | performance | property
 spec: SPEC-0005
 contract: CON-0010
-status: planned            # planned | implemented | passing | failing | skipped
-framework: "pytest-bdd"              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
-artifact: "tests/acceptance/test_gui_ablaeufe.py"
+status: passing            # planned | implemented | passing | failing | skipped
+framework: "pytest, pytest-qt"              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
+artifact: "tests/gui/test_gui_ablaeufe.py"
 tags: []
 ---
 

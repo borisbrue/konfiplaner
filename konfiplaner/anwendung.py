@@ -1,0 +1,254 @@
+"""Qt-freie Anwendungsschicht: Zustand und Abläufe der Anwendung (SPEC-0005 FR-11).
+
+Die GUI zeigt `Sitzung` nur an; Fachlogik bleibt in Import, Registry, Planer und Export.
+"""
+
+from __future__ import annotations
+
+import dataclasses
+import logging
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import time
+from pathlib import Path
+from typing import Any
+
+from konfiplaner.einstellungen import Einstellungsspeicher, KeineEinstellungen
+from konfiplaner.excel_export import exportiere, tabellen
+from konfiplaner.excel_import import Importergebnis, importiere
+from konfiplaner.modell import Modell, ModellFehler, Plan, Thema, Zeitslot
+from konfiplaner.planer import Abbruchsignal, Fortschritt, Planer, PlanerOptionen
+from konfiplaner.restriktionen import (
+    STANDARD_REGISTRY,
+    Konfiguration,
+    KonfigurationsFehler,
+    RegelEinstellung,
+    Registry,
+    standard_konfiguration,
+)
+from konfiplaner.solver import CpSatPlaner
+from konfiplaner.zeitraster import erzeuge_slots
+
+log = logging.getLogger(__name__)
+
+STANDARD_ZEITLIMIT_S = 60.0
+STANDARD_ZEITRASTER = {"tage": "Samstag", "beginn": "09:00", "ende": "12:00", "laenge_min": 45}
+
+
+@dataclass(frozen=True)
+class RegelAnsicht:
+    """Eine Restriktion für die Regelverwaltung."""
+
+    name: str
+    typ: str
+    gewicht: float
+    erlaubte_typen: tuple[str, ...]
+    bearbeitbar: bool  # False: braucht Pflichtparameter, nur per Konfigurationsdatei
+    parameter_text: str
+    beschreibung: str
+
+
+class Sitzung:
+    def __init__(
+        self,
+        einstellungen: Einstellungsspeicher | None = None,
+        registry: Registry = STANDARD_REGISTRY,
+        planer: Planer | None = None,
+    ) -> None:
+        self._speicher = einstellungen or KeineEinstellungen()
+        self.registry = registry
+        self.planer: Planer = planer or CpSatPlaner(registry)
+        self.datei: Path | None = None
+        self.ergebnis: Importergebnis | None = None
+        self.themen: list[Thema] = []
+        self.zeitslots: list[Zeitslot] = []
+        self.verfuegbarkeit: dict[str, set[int]] = {}
+        self.plan: Plan | None = None
+        self.plan_modell: Modell | None = None
+        self.konfiguration = self._basiskonfiguration()
+        self.zeitlimit_s = STANDARD_ZEITLIMIT_S
+        self.zeitraster: dict[str, Any] = dict(STANDARD_ZEITRASTER)
+        self.letzter_exportordner: Path | None = None
+        self._mtime: float | None = None
+        self._lade_einstellungen()
+
+    # ── Einstellungen (FR-07) ───────────────────────────────────────────────
+    def _basiskonfiguration(self) -> Konfiguration:
+        k = standard_konfiguration()
+        for name in self.registry.namen():
+            if name not in k.einstellungen:
+                k.einstellungen[name] = RegelEinstellung(name, "aus")
+        return k
+
+    def _lade_einstellungen(self) -> None:
+        daten = self._speicher.laden()
+        if isinstance(daten.get("letzte_datei"), str):
+            self.datei = Path(daten["letzte_datei"])
+        if isinstance(daten.get("zeitlimit_s"), (int, float)) and daten["zeitlimit_s"] > 0:
+            self.zeitlimit_s = float(daten["zeitlimit_s"])
+        if isinstance(daten.get("zeitraster"), dict):
+            self.zeitraster.update(daten["zeitraster"])
+        if isinstance(daten.get("letzter_exportordner"), str):
+            self.letzter_exportordner = Path(daten["letzter_exportordner"])
+        regeln = daten.get("regeln")
+        if isinstance(regeln, dict):
+            for name, eintrag in regeln.items():
+                try:
+                    self.konfiguration = Konfiguration.aus_dict(
+                        {"restriktionen": {name: eintrag}}, self.registry, self.konfiguration
+                    )
+                except (KonfigurationsFehler, TypeError, KeyError):
+                    log.warning("Gespeicherte Regel %s ignoriert", name)
+
+    def speichere(self) -> None:
+        self._speicher.speichern(
+            {
+                "letzte_datei": str(self.datei) if self.datei else None,
+                "zeitlimit_s": self.zeitlimit_s,
+                "zeitraster": dict(self.zeitraster),
+                "letzter_exportordner": str(self.letzter_exportordner) if self.letzter_exportordner else None,
+                "regeln": {
+                    n: {"typ": e.typ, "gewicht": e.gewicht, "parameter": dict(e.parameter)}
+                    for n, e in self.konfiguration.einstellungen.items()
+                },
+            }
+        )
+
+    # ── Daten laden und ergänzen (FR-02, FR-10) ─────────────────────────────
+    def lade(self, pfad: str | Path) -> Importergebnis:
+        """Liest die Datei; `ImportDateiFehler` bei unlesbaren Dateien (Zustand bleibt dann unverändert)."""
+        pfad = Path(pfad)
+        ergebnis = importiere(pfad)
+        self.datei, self.ergebnis = pfad, ergebnis
+        self.themen = list(ergebnis.themen)
+        self.zeitslots = list(ergebnis.zeitslots)
+        self.verfuegbarkeit = {k: set(v) for k, v in ergebnis.verfuegbarkeit.items()}
+        self.plan = self.plan_modell = None
+        self._mtime = pfad.stat().st_mtime
+        self.speichere()
+        return ergebnis
+
+    def neu_laden(self) -> Importergebnis:
+        if self.datei is None:
+            raise ModellFehler("Keine Datei geladen")
+        return self.lade(self.datei)
+
+    def datei_geaendert(self) -> bool:
+        """True, wenn die geladene Datei seit dem Laden verändert wurde."""
+        if self.datei is None or self._mtime is None:
+            return False
+        try:
+            return self.datei.stat().st_mtime != self._mtime
+        except OSError:
+            return False
+
+    def setze_thema(self, index: int, **felder: Any) -> None:
+        """Ändert Wichtigkeit, Mindestanzahl oder Dauer; ungültige Werte lösen `ModellFehler` aus."""
+        neu = dataclasses.replace(self.themen[index], **felder)
+        self.themen[index] = neu
+        self.plan = self.plan_modell = None
+
+    def erzeuge_zeitslots(self, tage: str, beginn: time, ende: time, laenge_min: int) -> list[Zeitslot]:
+        slots = erzeuge_slots([t for t in tage.split(",")], beginn, ende, laenge_min)
+        self.zeitslots = slots
+        self.verfuegbarkeit = {}  # Slot-Indizes der Datei passen nicht mehr
+        self.zeitraster = {
+            "tage": tage,
+            "beginn": f"{beginn:%H:%M}",
+            "ende": f"{ende:%H:%M}",
+            "laenge_min": laenge_min,
+        }
+        self.plan = self.plan_modell = None
+        self.speichere()
+        return slots
+
+    def planungshindernisse(self) -> list[str]:
+        gruende = []
+        if self.ergebnis is None:
+            return ["Keine Datei geladen"]
+        if self.ergebnis.fehler:
+            gruende.append(f"{len(self.ergebnis.fehler)} Fehler in der Datei")
+        if not self.ergebnis.personen:
+            gruende.append("Keine Personen")
+        if not self.zeitslots:
+            gruende.append("Keine Zeitslots")
+        return gruende
+
+    @property
+    def planbar(self) -> bool:
+        return not self.planungshindernisse()
+
+    def modell(self) -> Modell:
+        if self.ergebnis is None:
+            raise ModellFehler("Keine Datei geladen")
+        return self.ergebnis.baue_modell(
+            list(self.themen), list(self.zeitslots), {k: set(v) for k, v in self.verfuegbarkeit.items()}
+        )
+
+    # ── Regeln (FR-03) ──────────────────────────────────────────────────────
+    def regeln(self) -> list[RegelAnsicht]:
+        ansicht = []
+        for name in self.registry.namen():
+            klasse = self.registry.hole(name)
+            e = self.konfiguration.einstellungen.get(name, RegelEinstellung(name, "aus"))
+            pflicht = any(p for _, p in klasse.parameter.values())
+            ansicht.append(
+                RegelAnsicht(
+                    name,
+                    e.typ,
+                    e.gewicht,
+                    klasse.erlaubte_typen,
+                    not pflicht,
+                    ", ".join(f"{k}={v}" for k, v in e.parameter.items()),
+                    klasse.beschreibung,
+                )
+            )
+        return ansicht
+
+    def setze_regel(self, name: str, typ: str, gewicht: float = 1.0) -> None:
+        """Setzt Typ und Gewicht; Parameter bleiben. `KonfigurationsFehler` bei ungültigen Werten."""
+        alt = self.konfiguration.einstellungen.get(name, RegelEinstellung(name, "aus"))
+        self.konfiguration = Konfiguration.aus_dict(
+            {"restriktionen": {name: {"typ": typ, "gewicht": gewicht, "parameter": dict(alt.parameter)}}},
+            self.registry,
+            self.konfiguration,
+        )
+        self.speichere()
+
+    def regeln_zuruecksetzen(self) -> None:
+        self.konfiguration = self._basiskonfiguration()
+        self.speichere()
+
+    def lade_regeldatei(self, pfad: str | Path) -> None:
+        self.konfiguration = Konfiguration.aus_yaml(Path(pfad), self.registry, self.konfiguration)
+        self.speichere()
+
+    # ── Planen und Ergebnis (FR-04, FR-05) ──────────────────────────────────
+    def planen(
+        self, fortschritt: Callable[[Fortschritt], None] | None = None, abbruch: Abbruchsignal | None = None
+    ) -> Plan:
+        """Blockierend; die GUI ruft dies in einem Worker-Thread auf."""
+        hindernisse = self.planungshindernisse()
+        if hindernisse:
+            raise ModellFehler("; ".join(hindernisse))
+        modell = self.modell()
+        plan = self.planer.planen(
+            modell, self.konfiguration, PlanerOptionen(zeitlimit_s=self.zeitlimit_s), fortschritt, abbruch
+        )
+        self.plan, self.plan_modell = plan, modell
+        return plan
+
+    def tabellen(self) -> dict[str, list[list]]:
+        if self.plan is None or self.plan_modell is None:
+            return {}
+        return tabellen(self.plan, self.plan_modell)
+
+    def exportiere(self, ziel: str | Path, ueberschreiben: bool = False) -> None:
+        if self.plan is None or self.plan_modell is None:
+            raise ModellFehler("Kein Plan vorhanden")
+        exportiere(self.plan, self.plan_modell, ziel, ueberschreiben)
+        self.letzter_exportordner = Path(ziel).parent
+        self.speichere()
+
+
+__all__ = ["RegelAnsicht", "Sitzung"]

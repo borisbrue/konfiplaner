@@ -60,16 +60,56 @@ def exportiere(plan: Plan, modell: Modell, ziel: str | Path, ueberschreiben: boo
         raise ExportFehler(f"{ziel.name} kann nicht geschrieben werden: {e.strerror or e}") from e
 
 
-def baue_arbeitsmappe(plan: Plan, modell: Modell) -> Workbook:
+def tabellen(plan: Plan, modell: Modell) -> dict[str, list[list]]:
+    """Datenzeilen je Blatt (ohne Kopfzeile). Grundlage für Excel-Export und GUI-Ansichten."""
     for t in plan.termine:
         if not 0 <= t.start_slot or t.start_slot + t.anzahl_slots > len(modell.zeitslots):
             raise ExportFehler(f"Termin {t.thema} liegt außerhalb der Zeitslots")
+    geordnet = sorted(plan.termine, key=lambda t: (t.start_slot, t.thema))
+    termine, personen, themen, hinweise = [], [], [], []
+    for t in geordnet:
+        tag, start, ende = _zeit(modell, t)
+        termine.append([tag, start, ende, t.thema, len(t.teilnehmer), ", ".join(t.teilnehmer)])
+    for p in modell.personen:
+        for t in geordnet:
+            if p.name in t.teilnehmer:
+                tag, start, ende = _zeit(modell, t)
+                personen.append([p.name, tag, start, ende, t.thema])
+    for th in modell.themen:
+        eigene = [t for t in plan.termine if t.thema == th.name]
+        erfuellt = bool(eigene) and all(len(t.teilnehmer) >= th.mindestanzahl for t in eigene)
+        themen.append(
+            [
+                th.name,
+                th.wichtigkeit,
+                th.mindestanzahl,
+                sum(len(t.teilnehmer) for t in eigene),
+                "ja" if erfuellt else "nein",
+            ]
+        )
+    if plan.status == "machbar":
+        hinweise.append(["Status", "Plan ist nicht optimal"])
+    hinweise += [["Begründung", text] for text in plan.begruendung]
+    hinweise += [["Verstoß", f"{v.restriktion}: {v.text}"] for v in plan.verstoesse]
+    hinweise += [["Warnung", text] for text in plan.warnungen]
+    return {"Termine": termine, "Personen": personen, "Themen": themen, "Hinweise": hinweise}
+
+
+def baue_arbeitsmappe(plan: Plan, modell: Modell) -> Workbook:
     mappe = Workbook()
     mappe.remove(mappe.active)
-    _termine(mappe.create_sheet("Termine"), plan, modell)
-    _personen(mappe.create_sheet("Personen"), plan, modell)
-    _themen(mappe.create_sheet("Themen"), plan, modell)
-    _hinweise(mappe.create_sheet("Hinweise"), plan)
+    for name, zeilen in tabellen(plan, modell).items():
+        blatt = mappe.create_sheet(name)
+        blatt.append(SPALTEN[name])
+        for zelle in blatt[1]:
+            zelle.font = Font(bold=True)
+        blatt.freeze_panes = "A2"
+        for zeile in zeilen:
+            blatt.append(zeile)
+            for zelle in blatt[blatt.max_row]:
+                if hasattr(zelle.value, "hour"):
+                    zelle.number_format = ZEITFORMAT
+        _breiten(blatt)
     return mappe
 
 
@@ -78,74 +118,7 @@ def _zeit(modell: Modell, t: Termin):
     return erster.tag, erster.start, letzter.ende
 
 
-def _kopf(blatt: Worksheet) -> None:
-    blatt.append(SPALTEN[blatt.title])
-    for zelle in blatt[1]:
-        zelle.font = Font(bold=True)
-    blatt.freeze_panes = "A2"
-
-
 def _breiten(blatt: Worksheet) -> None:
     for spalte in blatt.columns:
         laenge = max(len(str(z.value)) if z.value is not None else 0 for z in spalte)
         blatt.column_dimensions[spalte[0].column_letter].width = min(max(laenge + 2, 10), 60)
-
-
-def _zeile(blatt: Worksheet, werte: list) -> None:
-    blatt.append(werte)
-    for zelle in blatt[blatt.max_row]:
-        if hasattr(zelle.value, "hour"):
-            zelle.number_format = ZEITFORMAT
-
-
-def _geordnet(plan: Plan) -> list[Termin]:
-    return sorted(plan.termine, key=lambda t: (t.start_slot, t.thema))
-
-
-def _termine(blatt: Worksheet, plan: Plan, modell: Modell) -> None:
-    _kopf(blatt)
-    for t in _geordnet(plan):
-        tag, start, ende = _zeit(modell, t)
-        _zeile(blatt, [tag, start, ende, t.thema, len(t.teilnehmer), ", ".join(t.teilnehmer)])
-    _breiten(blatt)
-
-
-def _personen(blatt: Worksheet, plan: Plan, modell: Modell) -> None:
-    _kopf(blatt)
-    for p in modell.personen:
-        for t in _geordnet(plan):
-            if p.name in t.teilnehmer:
-                tag, start, ende = _zeit(modell, t)
-                _zeile(blatt, [p.name, tag, start, ende, t.thema])
-    _breiten(blatt)
-
-
-def _themen(blatt: Worksheet, plan: Plan, modell: Modell) -> None:
-    _kopf(blatt)
-    for th in modell.themen:
-        termine = [t for t in plan.termine if t.thema == th.name]
-        erfuellt = bool(termine) and all(len(t.teilnehmer) >= th.mindestanzahl for t in termine)
-        _zeile(
-            blatt,
-            [
-                th.name,
-                th.wichtigkeit,
-                th.mindestanzahl,
-                sum(len(t.teilnehmer) for t in termine),
-                "ja" if erfuellt else "nein",
-            ],
-        )
-    _breiten(blatt)
-
-
-def _hinweise(blatt: Worksheet, plan: Plan) -> None:
-    _kopf(blatt)
-    if plan.status == "machbar":
-        blatt.append(["Status", "Plan ist nicht optimal"])
-    for text in plan.begruendung:
-        blatt.append(["Begründung", text])
-    for v in plan.verstoesse:
-        blatt.append(["Verstoß", f"{v.restriktion}: {v.text}"])
-    for text in plan.warnungen:
-        blatt.append(["Warnung", text])
-    _breiten(blatt)

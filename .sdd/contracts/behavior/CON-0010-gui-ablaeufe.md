@@ -6,14 +6,14 @@ type: behavior
 format: gherkin
 spec: SPEC-0005
 version: 0.1.0
-status: review
+status: approved
 artifact: ".sdd/contracts/behavior/gui-ablaeufe.feature"
 tests: ["TST-0010"]
 ---
 
 # Contract: GUI-Abläufe
 
-> **Spec:** SPEC-0005 · **Typ:** Verhalten (Gherkin) · **Status:** review
+> **Spec:** SPEC-0005 · **Typ:** Verhalten (Gherkin) · **Status:** approved
 
 ## Zweck
 
@@ -30,8 +30,9 @@ Jedes Szenario MUSS durch einen automatisierten Test (z.B. Cucumber, behave, Spe
 
 ## Begriffe
 
-<!-- Domänensprache, die in den Szenarien verwendet wird -->
-
-| Begriff   | Definition |
-|-----------|------------|
-| ...       | ...        |
+| Begriff | Definition |
+|---|---|
+| Sitzung | Qt-freie Anwendungsschicht mit Zustand und Abläufen; die GUI zeigt sie nur an |
+| Schritte | Seiten Daten, Regeln, Planen, Ergebnis; Export über Schaltfläche/Menü |
+| Planbar | Datei ohne Fehler geladen und mindestens ein Zeitslot vorhanden |
+| Einstellungsspeicher | Qt-unabhängige Persistenz (Standard: YAML-Datei in der Benutzerkonfiguration) |

@@ -42,6 +42,7 @@ class Restriktion:
     standard_typ: ClassVar[str] = "hart"
     erlaubte_typen: ClassVar[tuple[str, ...]] = TYPEN
     parameter: ClassVar[dict[str, tuple[type, bool]]] = {}
+    beschreibung: ClassVar[str] = ""
 
     def pruefe_parameter(self, werte: dict[str, Any]) -> None:
         for pname, (ptyp, pflicht) in self.parameter.items():

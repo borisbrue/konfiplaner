@@ -18,6 +18,7 @@ def restriktion(klasse):
 @restriktion
 class Themenabdeckung(Restriktion):
     name = "themenabdeckung"
+    beschreibung = "Jedes Thema findet mindestens einmal statt."
 
     def anwenden(self, ctx: Planungskontext, werte: dict[str, Any]) -> None:
         for t in ctx.modell.themen:
@@ -32,6 +33,7 @@ class Themenabdeckung(Restriktion):
 @restriktion
 class Mindestanzahl(Restriktion):
     name = "mindestanzahl"
+    beschreibung = "Jeder Termin erreicht die Mindestanzahl seines Themas."
 
     def anwenden(self, ctx: Planungskontext, werte: dict[str, Any]) -> None:
         for t in ctx.modell.themen:
@@ -46,6 +48,7 @@ class Mindestanzahl(Restriktion):
 @restriktion
 class Schwerpunkte(Restriktion):
     name = "schwerpunkte"
+    beschreibung = "Jede Person nimmt an je einem Termin ihrer beiden Schwerpunktthemen teil."
 
     def anwenden(self, ctx: Planungskontext, werte: dict[str, Any]) -> None:
         for p in ctx.modell.personen:
@@ -61,6 +64,7 @@ class Schwerpunkte(Restriktion):
 @restriktion
 class KeineUeberschneidung(Restriktion):
     name = "keine_ueberschneidung"
+    beschreibung = "Niemand hat zwei Termine gleichzeitig."
 
     def anwenden(self, ctx: Planungskontext, werte: dict[str, Any]) -> None:
         for p in ctx.modell.personen:
@@ -72,6 +76,7 @@ class KeineUeberschneidung(Restriktion):
 @restriktion
 class Verfuegbarkeit(Restriktion):
     name = "verfuegbarkeit"
+    beschreibung = "Personen nehmen nur in Slots teil, in denen sie verfügbar sind."
 
     def anwenden(self, ctx: Planungskontext, werte: dict[str, Any]) -> None:
         modell = ctx.modell
@@ -90,6 +95,7 @@ class Wichtigkeit(Restriktion):
     """Wichtige Themen bekommen früher liegende Slots (Strafe = Wichtigkeit × Slot-Index)."""
 
     name = "wichtigkeit"
+    beschreibung = "Wichtigere Themen bekommen früher liegende Slots."
     standard_typ = "weich"
     erlaubte_typen = ("weich", "aus")
 

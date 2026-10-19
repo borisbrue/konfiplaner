@@ -26,3 +26,23 @@ Funktionalität: GUI-Ablauf (SPEC-0005, CON-0010)
     Angenommen die Regelverwaltung ist offen
     Wenn ich eine Grundregel von hart auf weich stelle und ein Gewicht setze
     Dann wird die Einstellung gespeichert und bei der nächsten Planung verwendet
+
+  Szenario: Themenwerte und Zeitslots ergänzen
+    Angenommen ich lade eine Datei nur mit dem Blatt "Personen"
+    Wenn ich Zeitslots per Formular erzeuge
+    Dann ist "Planen" möglich
+    Und die Themenwerte sind in der Tabelle bearbeitbar
+
+  Szenario: Planen erst bei fehlerfreien Daten
+    Angenommen keine Datei ist geladen
+    Dann ist "Planen" nicht möglich
+
+  Szenario: Einstellungen merken
+    Angenommen ich habe eine Datei geladen und eine Regel auf "weich" gestellt
+    Wenn ich die App neu starte
+    Dann sind Dateipfad und Regelkonfiguration wiederhergestellt
+
+  Szenario: Export bestätigen
+    Angenommen ein fertiger Plan und eine vorhandene Zieldatei
+    Wenn ich exportiere und das Überschreiben nicht bestätige
+    Dann bleibt die Zieldatei unverändert

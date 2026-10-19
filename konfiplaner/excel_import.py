@@ -149,6 +149,37 @@ def importiere(pfad: str | Path, zuordnung: dict[str, list[str]] | None = None) 
         mappe.close()
 
 
+def finde_spalte(kopfzeile: list[str], spalte: str) -> int | None:
+    """Index der Kopfzeilen-Zelle, die zur Meldungs-Spalte (z. B. "Thema 1") gehört."""
+    kanon = _norm(spalte).replace(" ", "_")
+    aliasse = {_norm(a) for a in STANDARD_ALIASSE.get(kanon, (kanon,))}
+    for i, zelle in enumerate(kopfzeile):
+        if _norm(zelle) in aliasse:
+            return i
+    return None
+
+
+def rohdaten(pfad: str | Path) -> dict[str, list[list[str]]]:
+    """Alle Blätter als Textzeilen (inkl. Kopfzeile, Index = Excel-Zeile - 1) für Vorschauen."""
+    try:
+        mappe = load_workbook(Path(pfad), data_only=True, read_only=True)
+    except (zipfile.BadZipFile, InvalidFileException, KeyError, OSError, ValueError) as e:
+        raise ImportDateiFehler(f"{Path(pfad).name} ist keine lesbare Excel-Datei") from e
+    try:
+        return {
+            ws.title: [
+                [
+                    "" if c is None else (f"{c:%H:%M}" if isinstance(c, (time, datetime)) else str(c))
+                    for c in zeile
+                ]
+                for zeile in ws.iter_rows(values_only=True)
+            ]
+            for ws in mappe
+        }
+    finally:
+        mappe.close()
+
+
 class _Leser:
     def __init__(self, mappe, zuordnung: dict[str, list[str]]) -> None:
         self.mappe = mappe

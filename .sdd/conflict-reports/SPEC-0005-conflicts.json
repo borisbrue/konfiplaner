@@ -1,0 +1,113 @@
+{
+  "spec_id": "SPEC-0005",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0005-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-10",
+      "conflicting_contract": "SPEC-0001:FR-01",
+      "detail": "FR-10 erlaubt das manuelle Ergänzen von Themenwerten (Wichtigkeit, Mindestanzahl, Dauer) und Zeitslots in der GUI, obwohl SPEC-0001 genau diese Daten (Themen, Zeitslots) aus Excel importiert und validiert; die Regeln für Pflichtfelder und Gültigkeit könnten doppelt definiert sein.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Zugesagt: Sitzung delegiert nur an Import, Registry/Konfiguration, Planer und Export; Ergebnisansichten nutzen dieselben Tabellenzeilen wie der Export (excel_export.tabellen); Validierung von Themen/Slots bleibt im Domänenmodell (GUI fängt ModellFehler ab).",
+        "resolved_at": "2026-10-19T14:11:33Z"
+      }
+    },
+    {
+      "id": "CF-0005-R002",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-02",
+      "conflicting_contract": "SPEC-0001:FR-01",
+      "detail": "FR-02 zeigt die Fehlerliste aus SPEC-0001 an, daher sollte das Fehlerformat (Blatt, Zeile, Spalte) nur dort definiert und in SPEC-0005 referenziert werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Zugesagt: Sitzung delegiert nur an Import, Registry/Konfiguration, Planer und Export; Ergebnisansichten nutzen dieselben Tabellenzeilen wie der Export (excel_export.tabellen); Validierung von Themen/Slots bleibt im Domänenmodell (GUI fängt ModellFehler ab).",
+        "resolved_at": "2026-10-19T14:11:33Z"
+      }
+    },
+    {
+      "id": "CF-0005-R003",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-03",
+      "conflicting_contract": "SPEC-0003:FR-03",
+      "detail": "FR-03 beschreibt das Aktivieren, Deaktivieren und Gewichten von Restriktionen, was SPEC-0003 (US-02, einzeln aktivier-/parametrierbar) bereits als Kernfunktion der Registry festlegt; die GUI darf nur die Registry-Schnittstelle nutzen und keine eigene Regelkonfiguration definieren.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Zugesagt: Sitzung delegiert nur an Import, Registry/Konfiguration, Planer und Export; Ergebnisansichten nutzen dieselben Tabellenzeilen wie der Export (excel_export.tabellen); Validierung von Themen/Slots bleibt im Domänenmodell (GUI fängt ModellFehler ab).",
+        "resolved_at": "2026-10-19T14:11:33Z"
+      }
+    },
+    {
+      "id": "CF-0005-R004",
+      "type": "redundancy",
+      "severity": "low",
+      "new_contract": "FR-07",
+      "conflicting_contract": "SPEC-0003:FR-03",
+      "detail": "FR-07 speichert die Regelkonfiguration in den Einstellungen, was neben einer möglichen Konfigurationspersistenz in SPEC-0003 liegt und dort nicht doppelt festgelegt werden sollte.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Zugesagt: Sitzung delegiert nur an Import, Registry/Konfiguration, Planer und Export; Ergebnisansichten nutzen dieselben Tabellenzeilen wie der Export (excel_export.tabellen); Validierung von Themen/Slots bleibt im Domänenmodell (GUI fängt ModellFehler ab).",
+        "resolved_at": "2026-10-19T14:11:34Z"
+      }
+    },
+    {
+      "id": "CF-0005-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0002:FR-12",
+      "detail": "FR-04 (Fortschritt, Zeitlimit, Abbruch) und FR-09 beschreiben dieselben Fähigkeiten wie SPEC-0002 FR-12 (Fortschritts-Callback, Abbruchsignal); Zeitlimit und Abbruch sind in SPEC-0002 bereits konfigurierbar, die GUI sollte sie nur durchreichen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Zugesagt: Sitzung delegiert nur an Import, Registry/Konfiguration, Planer und Export; Ergebnisansichten nutzen dieselben Tabellenzeilen wie der Export (excel_export.tabellen); Validierung von Themen/Slots bleibt im Domänenmodell (GUI fängt ModellFehler ab).",
+        "resolved_at": "2026-10-19T14:11:34Z"
+      }
+    },
+    {
+      "id": "CF-0005-R006",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-11",
+      "conflicting_contract": "SPEC-0002:FR-12",
+      "detail": "Die Qt-freie Klasse Sitzung (FR-11) mit Abläufen für Planen, Regeln und Export überschneidet sich mit der Orchestrierung in Planer (SPEC-0002) und kann zu doppelter Ablauflogik führen; ebenso steht FR-08 (keine Fachlogik in der GUI) in Spannung zu FR-10, das Themen- und Slot-Logik in der GUI ergänzt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Zugesagt: Sitzung delegiert nur an Import, Registry/Konfiguration, Planer und Export; Ergebnisansichten nutzen dieselben Tabellenzeilen wie der Export (excel_export.tabellen); Validierung von Themen/Slots bleibt im Domänenmodell (GUI fängt ModellFehler ab).",
+        "resolved_at": "2026-10-19T14:11:34Z"
+      }
+    },
+    {
+      "id": "CF-0005-R007",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-06",
+      "conflicting_contract": "SPEC-0004:FR-01",
+      "detail": "FR-06 bietet einen Export-Dialog, der nur SPEC-0004 aufrufen darf; die Ergebnisansichten nach Termin und Person (FR-05) überschneiden sich inhaltlich mit den Blättern Termine und Personen aus SPEC-0004, sodass die Darstellungslogik nicht doppelt gebaut werden sollte.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Zugesagt: Sitzung delegiert nur an Import, Registry/Konfiguration, Planer und Export; Ergebnisansichten nutzen dieselben Tabellenzeilen wie der Export (excel_export.tabellen); Validierung von Themen/Slots bleibt im Domänenmodell (GUI fängt ModellFehler ab).",
+        "resolved_at": "2026-10-19T14:11:35Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-10-19T14:11:58Z"
+}
