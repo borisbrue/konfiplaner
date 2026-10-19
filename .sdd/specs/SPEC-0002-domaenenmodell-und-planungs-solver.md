@@ -6,7 +6,7 @@ status: draft
 owner: "Boris Brünen"
 created: 2026-10-19
 updated: 2026-10-19
-version: 0.1.0
+version: 0.2.0
 priority: high
 tags: [solver, ortools, core]
 depends_on: ["SPEC-0001", "SPEC-0003"]
@@ -16,7 +16,7 @@ tests: []
 
 # Domänenmodell und Planungs-Solver
 
-> **Status:** draft · **Owner:** Boris Brünen · **Version:** 0.1.0
+> **Status:** draft · **Owner:** Boris Brünen · **Version:** 0.2.0
 
 ## 1. Kontext & Motivation
 
@@ -47,12 +47,12 @@ Kern von KonfiPlaner: aus Personen, Themen und Zeitslots einen Terminplan berech
 ## 4. Funktionale Anforderungen
 
 - **FR-01 (Modell):** Domänenobjekte `Thema` (Name, Wichtigkeit, Mindestanzahl, Dauer), `Person` (Name, genau 2 Schwerpunktthemen, Verfügbarkeit), `Zeitslot`, `Termin` (Thema, Slot(s), Teilnehmer), `Plan`.
-- **FR-02 (Themenabdeckung):** Jedes Thema wird als mindestens ein Termin eingeplant (hart).
-- **FR-03 (Mindestanzahl):** Ein stattfindender Termin hat mindestens `Mindestanzahl` Teilnehmende des Themas (hart).
-- **FR-04 (Dauer):** Ein Termin belegt aufeinanderfolgende Slots, die mindestens die Themendauer abdecken.
+- **FR-02 (Themenabdeckung):** Jedes Thema findet statt. Es darf genau einen Termin je Thema geben; mehr sind möglich, aber nicht erforderlich. Kein Thema darf entfallen (hart, aber über SPEC-0003 anpassbar).
+- **FR-03 (Mindestanzahl):** `Mindestanzahl` ist die Mindest-Teilnehmerzahl pro Termin; jeder Termin des Themas erreicht sie (hart, anpassbar).
+- **FR-04 (Dauer):** Ein Termin belegt aufeinanderfolgende Slots, die mindestens die Themendauer abdecken. Der Startslot je Termin ist die zentrale Stellgröße des Solvers.
 - **FR-05 (Schwerpunkte):** Jede Person wird mindestens einem Termin je Schwerpunktthema zugeordnet (hart, sofern verfügbar).
 - **FR-06 (Keine Überschneidung):** Eine Person nimmt nie an zwei zeitlich überlappenden Terminen teil (hart).
-- **FR-07 (Wichtigkeit):** Wichtigkeit geht als Gewicht in die Zielfunktion ein; bei Konflikten werden Restriktionen unwichtiger Themen zuerst gelockert.
+- **FR-07 (Wichtigkeit):** Wichtigkeit ist ein Gewicht in der Zielfunktion. Bei Konflikten (z. B. überlappende Schwerpunkttermine einer Person) wird zuerst über die Zeitslots der Termine verhandelt: wichtige Themen bekommen bevorzugte Slots und möglichst vollständige Teilnahme, unwichtige Themen weichen aus. Ein Thema entfällt nie.
 - **FR-08 (Restriktionen):** Alle Bedingungen werden über die Restriktions-Schnittstelle aus SPEC-0003 eingebunden, nicht fest im Solver verdrahtet.
 - **FR-09 (Diagnose):** Ist kein Plan möglich, nennt der Solver die verletzten/kollidierenden Restriktionen in Klartext.
 - **FR-10:** Zeitlimit, Seed und Gewichte sind konfigurierbar.
@@ -113,14 +113,15 @@ Feature: Planung
 
 ## 10. Offene Fragen
 
-- [ ] **Mindestanzahl:** Gilt sie pro Termin (Teilnehmerzahl) oder als Mindestanzahl Termine pro Thema? (Annahme: Teilnehmer pro Termin.)
-- [ ] Gibt es eine Höchstgröße pro Termin / Raumkapazität?
-- [ ] Wirkt Wichtigkeit nur als Gewicht, oder darf ein unwichtiges Thema bei Unlösbarkeit entfallen? (Widerspräche „jedes Thema muss vorkommen".)
-- [ ] Dürfen Personen auch Termine außerhalb ihrer Schwerpunkte besuchen (Auffüllen)?
-- [ ] Mehrere parallele Termine gleichzeitig (Räume/Leitende nötig)?
+- [x] Mindestanzahl = Teilnehmer pro Termin; ein Termin je Thema ist zulässig (geklärt 2026-10-19).
+- [ ] (bewusst offen, nicht in v1) Höchstgröße pro Termin / Raumkapazität
+- [x] Kein Thema darf entfallen; Wichtigkeit steuert Slot-Wahl und Gewichtung (geklärt).
+- [ ] Dürfen Personen zum Erreichen der Mindestanzahl Termine außerhalb ihrer Schwerpunkte besuchen?
+- [ ] (bewusst offen) Begrenzung paralleler Termine; v1 erlaubt sie unbegrenzt
 
 ## 11. Änderungshistorie
 
 | Datum      | Version | Autor        | Änderung            |
 |------------|---------|--------------|---------------------|
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
+| 2026-10-19 | 0.2.0   | Boris Brünen | Klärung: Mindestanzahl, Wichtigkeit, Excel-Layout, anpassbare Grundregeln |

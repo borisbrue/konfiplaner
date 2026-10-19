@@ -6,7 +6,7 @@ status: draft
 owner: "Boris Brünen"
 created: 2026-10-19
 updated: 2026-10-19
-version: 0.1.0
+version: 0.2.0
 priority: high
 tags: [restrictions, plugin]
 depends_on: []
@@ -16,7 +16,7 @@ tests: []
 
 # Erweiterbare Restriktionen
 
-> **Status:** draft · **Owner:** Boris Brünen · **Version:** 0.1.0
+> **Status:** draft · **Owner:** Boris Brünen · **Version:** 0.2.0
 
 ## 1. Kontext & Motivation
 
@@ -45,7 +45,7 @@ Die Liste der Planungsregeln wird wachsen (z. B. „Person A nie mit Person B", 
 
 - **FR-01:** Schnittstelle `Restriktion` mit: eindeutiger Name, Typ (`hart`/`weich`), Parameterschema, Methode `anwenden(modell, solver_kontext)`, Methode `erklaere(plan)` für Verstöße.
 - **FR-02:** Registry mit Registrierung per Dekorator und per Python-Entry-Point (`konfiplaner.restriktionen`).
-- **FR-03:** Aktivierung, Typ (hart/weich) und Gewicht je Restriktion in einer Konfigurationsdatei (YAML) änderbar.
+- **FR-03:** Auch die mitgelieferten Grundregeln sind anpassbar: je Restriktion Aktivierung, Typ (hart/weich/aus), Gewicht und Parameter in einer Konfigurationsdatei (YAML) und in der GUI änderbar, ohne Codeänderung.
 - **FR-04:** Mitgelieferte Restriktionen: Themenabdeckung, Mindestanzahl, Schwerpunkte, keine Überschneidung, Verfügbarkeit, Wichtigkeitsgewichtung.
 - **FR-05:** Optional können Regeln aus Excel (Blatt `Regeln`) mit Parametern geladen werden.
 - **FR-06:** Unbekannte oder fehlerhaft parametrierte Restriktionen führen zu einer klaren Fehlermeldung vor dem Solverlauf.
@@ -102,7 +102,7 @@ Feature: Restriktionen
 
 ## 10. Offene Fragen
 
-- [ ] Welche Beispielregeln sind für die erste Version konkret gewünscht?
+- [x] Für v1 nur die Grundregeln, diese aber vollständig anpassbar (geklärt 2026-10-19).
 - [ ] Sollen Nicht-Entwickler Regeln über Excel/GUI anlegen können oder nur per Code?
 
 ## 11. Änderungshistorie
@@ -110,3 +110,4 @@ Feature: Restriktionen
 | Datum      | Version | Autor        | Änderung            |
 |------------|---------|--------------|---------------------|
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
+| 2026-10-19 | 0.2.0   | Boris Brünen | Klärung: Mindestanzahl, Wichtigkeit, Excel-Layout, anpassbare Grundregeln |

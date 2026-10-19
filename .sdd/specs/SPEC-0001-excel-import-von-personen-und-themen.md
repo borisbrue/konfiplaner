@@ -6,7 +6,7 @@ status: draft
 owner: "Boris Brünen"
 created: 2026-10-19
 updated: 2026-10-19
-version: 0.1.0
+version: 0.2.0
 priority: high
 tags: [import, excel]
 depends_on: []
@@ -16,7 +16,7 @@ tests: []
 
 # Excel-Import von Personen und Themen
 
-> **Status:** draft · **Owner:** Boris Brünen · **Version:** 0.1.0
+> **Status:** draft · **Owner:** Boris Brünen · **Version:** 0.2.0
 
 ## 1. Kontext & Motivation
 
@@ -43,11 +43,11 @@ KonfiPlaner stellt Personen zu Terminen zusammen. Die Eingangsdaten liegen bei d
 
 ## 4. Funktionale Anforderungen
 
-- **FR-01:** Der Import liest die Blätter `Personen`, `Themen`, `Zeitslots` und optional `Verfügbarkeiten` und `Räume`.
-- **FR-02:** `Personen` enthält je Zeile: Name, Schwerpunktthema 1, Schwerpunktthema 2 (beide Pflicht, verschieden).
+- **FR-01:** Der Import liest das Blatt `Personen` (Pflicht) sowie `Themen`, `Zeitslots` und optional `Verfügbarkeiten`. Fehlen `Themen` oder `Zeitslots` in der Datei, werden diese Daten über die GUI (SPEC-0005) ergänzt.
+- **FR-02:** `Personen` enthält je Zeile: Name, Thema 1, Thema 2 (beide Pflicht, verschieden). Das ist das Minimalformat der Beispieldatei.
 - **FR-03:** `Themen` enthält je Zeile: Name (eindeutig), Wichtigkeit (ganzzahlig, 1 = unwichtig … 5 = sehr wichtig), Mindestanzahl, Dauer in Minuten.
 - **FR-04:** `Zeitslots` enthält je Zeile: Tag, Start, Ende. `Verfügbarkeiten` ordnet Personen Slots zu; fehlt das Blatt, gelten alle Personen als jederzeit verfügbar.
-- **FR-05:** Schwerpunktthemen müssen in `Themen` existieren; unbekannte Themen sind ein Fehler.
+- **FR-05:** Das Themenset ergibt sich aus `Themen`; fehlt das Blatt, aus den in `Personen` genannten Themen (dann mit Standardwerten, in der GUI anpassbar). Unbekannte Themen bei vorhandenem Blatt `Themen` sind ein Fehler.
 - **FR-06:** Spaltenüberschriften werden unabhängig von Groß-/Kleinschreibung und Leerzeichen erkannt; die Spaltenzuordnung ist konfigurierbar.
 - **FR-07:** Der Import liefert eine Fehlerliste (Blatt, Zeile, Spalte, Meldung); bei mindestens einem Fehler wird kein Modell geliefert.
 - **FR-08:** Doppelte Personen werden als Warnung gemeldet.
@@ -105,11 +105,12 @@ Feature: Excel-Import
 
 ## 10. Offene Fragen
 
-- [ ] Gibt es eine echte Beispieldatei, an der das Spaltenlayout ausgerichtet werden soll?
-- [ ] Wird Wichtigkeit als Zahl oder als Text (z. B. „hoch/mittel/niedrig") geführt?
+- [ ] Beispieldatei folgt (Minimalformat: Name, Thema 1, Thema 2); Layout danach prüfen.
+- [ ] Woher kommen Wichtigkeit, Mindestanzahl und Dauer, wenn die Excel nur Personen enthält (eigenes Blatt oder GUI-Eingabe)? Wichtigkeit als Zahl 1–5 oder Text?
 
 ## 11. Änderungshistorie
 
 | Datum      | Version | Autor        | Änderung            |
 |------------|---------|--------------|---------------------|
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
+| 2026-10-19 | 0.2.0   | Boris Brünen | Klärung: Mindestanzahl, Wichtigkeit, Excel-Layout, anpassbare Grundregeln |
