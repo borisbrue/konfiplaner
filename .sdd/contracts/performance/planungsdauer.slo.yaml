@@ -1,0 +1,20 @@
+# SPEC-0002 / CON-0005. Änderungen erfordern Versions-Bump gemäß SemVer.
+
+service: "konfiplaner-solver"
+window: per-run
+
+objectives:
+  - name: planungsdauer_500_personen
+    description: "Planung für 500 Personen, 30 Themen, 40 Slots bis zur ersten brauchbaren Lösung"
+    indicator: duration_s
+    target: 60
+    comparison: "<="
+
+  - name: reproduzierbarkeit
+    description: "Gleiche Eingabe + gleicher Seed liefern identische Pläne"
+    indicator: identical_plan_rate
+    target: 1.0
+    comparison: ">="
+
+error_budget:
+  policy: "Bei Überschreitung Zeitlimit-Verhalten (beste bisherige Lösung) prüfen, bevor Features folgen."

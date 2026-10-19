@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://konfiplaner.local/schemas/import.schema.json",
+  "title": "Importergebnis",
+  "description": "SPEC-0001 / CON-0001. Ergebnis eines Excel-Imports: Modell (nur wenn fehlerfrei) und Meldungen.",
+  "type": "object",
+  "required": [
+    "meldungen"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "meldungen": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "schwere",
+          "blatt",
+          "zeile",
+          "spalte",
+          "text"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "schwere": {
+            "enum": [
+              "fehler",
+              "warnung"
+            ]
+          },
+          "blatt": {
+            "type": "string",
+            "minLength": 1
+          },
+          "zeile": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "spalte": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "modell": {
+      "type": "object",
+      "required": [
+        "personen",
+        "themen"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "personen": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "themen"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "themen": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        },
+        "themen": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "wichtigkeit",
+              "mindestanzahl",
+              "dauer_min"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "wichtigkeit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              },
+              "mindestanzahl": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "dauer_min": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        "zeitslots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "tag",
+              "start",
+              "ende"
+            ],
+            "properties": {
+              "tag": {
+                "type": "string",
+                "minLength": 1
+              },
+              "start": {
+                "type": "string",
+                "minLength": 1
+              },
+              "ende": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "verfuegbarkeiten": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "person",
+              "slot"
+            ],
+            "properties": {
+              "person": {
+                "type": "string",
+                "minLength": 1
+              },
+              "slot": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "meldungen": {
+            "contains": {
+              "properties": {
+                "schwere": {
+                  "const": "fehler"
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "modell"
+          ]
+        }
+      }
+    }
+  ]
+}

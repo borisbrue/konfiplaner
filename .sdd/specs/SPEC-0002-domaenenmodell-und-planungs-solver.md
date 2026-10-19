@@ -6,17 +6,17 @@ status: draft
 owner: "Boris Brünen"
 created: 2026-10-19
 updated: 2026-10-19
-version: 0.2.0
+version: 0.3.0
 priority: high
 tags: [solver, ortools, core]
-depends_on: ["SPEC-0001", "SPEC-0003"]
-contracts: []
-tests: []
+depends_on: ["SPEC-0003"]
+contracts: ["CON-0003", "CON-0004", "CON-0005"]
+tests: ["TST-0003", "TST-0004", "TST-0005"]
 ---
 
 # Domänenmodell und Planungs-Solver
 
-> **Status:** draft · **Owner:** Boris Brünen · **Version:** 0.2.0
+> **Status:** draft · **Owner:** Boris Brünen · **Version:** 0.3.0
 
 ## 1. Kontext & Motivation
 
@@ -55,6 +55,8 @@ Kern von KonfiPlaner: aus Personen, Themen und Zeitslots einen Terminplan berech
 - **FR-07 (Wichtigkeit):** Wichtigkeit ist ein Gewicht in der Zielfunktion. Bei Konflikten (z. B. überlappende Schwerpunkttermine einer Person) wird zuerst über die Zeitslots der Termine verhandelt: wichtige Themen bekommen bevorzugte Slots und möglichst vollständige Teilnahme, unwichtige Themen weichen aus. Ein Thema entfällt nie.
 - **FR-08 (Restriktionen):** Alle Bedingungen werden über die Restriktions-Schnittstelle aus SPEC-0003 eingebunden, nicht fest im Solver verdrahtet.
 - **FR-09 (Diagnose):** Ist kein Plan möglich, nennt der Solver die verletzten/kollidierenden Restriktionen in Klartext.
+- **FR-11 (Abstraktion):** Der Solver steht hinter einer Schnittstelle `Planer` (Eingabe: Modell + Regelkonfiguration + Optionen, Ausgabe: `Plan`). CP-SAT ist eine austauschbare Implementierung; `Plan` ist solver-unabhängig und enthält Status, Termine, Verstöße und Begründungen.
+- **FR-12 (Fortschritt/Abbruch):** `Planer` akzeptiert einen Fortschritts-Callback und ein Abbruchsignal und liefert bei Abbruch oder Zeitlimit die beste bisherige Lösung.
 - **FR-10:** Zeitlimit, Seed und Gewichte sind konfigurierbar.
 
 ## 5. Nicht-funktionale Anforderungen
@@ -125,3 +127,4 @@ Feature: Planung
 |------------|---------|--------------|---------------------|
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
 | 2026-10-19 | 0.2.0   | Boris Brünen | Klärung: Mindestanzahl, Wichtigkeit, Excel-Layout, anpassbare Grundregeln |
+| 2026-10-19 | 0.3.0   | Boris Brünen | SOLID-Review: Abhängigkeitsrichtung und Abstraktionen präzisiert |

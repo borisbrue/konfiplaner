@@ -10,8 +10,8 @@ version: 0.1.0
 priority: medium
 tags: [export, excel]
 depends_on: ["SPEC-0002"]
-contracts: []
-tests: []
+contracts: ["CON-0008", "CON-0009"]
+tests: ["TST-0008", "TST-0009"]
 ---
 
 # Excel-Export des Terminplans
@@ -46,6 +46,7 @@ Der berechnete Plan muss weitergegeben werden. Da die Eingaben in Excel vorliege
 - **FR-02:** Blatt `Personen`: je Person ihre Termine in zeitlicher Reihenfolge.
 - **FR-03:** Blatt `Themen`: Auslastung je Thema gegenüber Mindestanzahl, Kennzeichnung von Wichtigkeit.
 - **FR-04:** Blatt `Hinweise`: Warnungen, verletzte weiche Restriktionen, Kennzeichen „nicht optimal".
+- **FR-06 (Abhängigkeit):** Der Export liest nur den solver-unabhängigen `Plan` (CON-0003) inklusive Status, Verstößen und Begründungen, nie Solver-Interna.
 - **FR-05:** Existierende Zieldatei wird nur nach Bestätigung überschrieben.
 
 ## 5. Nicht-funktionale Anforderungen
@@ -94,3 +95,4 @@ Feature: Export
 | Datum      | Version | Autor        | Änderung            |
 |------------|---------|--------------|---------------------|
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
+| 2026-10-19 | 0.3.0   | Boris Brünen | SOLID-Review: Abhängigkeitsrichtung und Abstraktionen präzisiert |

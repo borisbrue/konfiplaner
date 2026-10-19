@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://konfiplaner.local/schemas/export.schema.json",
+  "title": "Export-Blattstruktur",
+  "description": "SPEC-0004 / CON-0008. Erwartete Blätter und Spalten der Export-Datei.",
+  "type": "object",
+  "required": [
+    "Termine",
+    "Personen",
+    "Themen",
+    "Hinweise"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "Termine": {
+      "const": [
+        "Tag",
+        "Start",
+        "Ende",
+        "Thema",
+        "Teilnehmerzahl"
+      ]
+    },
+    "Personen": {
+      "const": [
+        "Name",
+        "Tag",
+        "Start",
+        "Ende",
+        "Thema"
+      ]
+    },
+    "Themen": {
+      "const": [
+        "Thema",
+        "Wichtigkeit",
+        "Mindestanzahl",
+        "Teilnehmerzahl",
+        "Erfüllt"
+      ]
+    },
+    "Hinweise": {
+      "const": [
+        "Art",
+        "Text"
+      ]
+    }
+  }
+}

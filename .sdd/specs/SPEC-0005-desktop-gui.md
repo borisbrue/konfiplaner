@@ -10,8 +10,8 @@ version: 0.1.0
 priority: medium
 tags: [gui, pyside6]
 depends_on: ["SPEC-0001", "SPEC-0002", "SPEC-0003", "SPEC-0004"]
-contracts: []
-tests: []
+contracts: ["CON-0010"]
+tests: ["TST-0010"]
 ---
 
 # Desktop-GUI
@@ -52,6 +52,7 @@ Planer:innen sollen ohne Kommandozeile arbeiten: Excel laden, Regeln wählen, pl
 - **FR-05:** Ergebnisansichten: nach Termin, nach Person, nach Thema; Verletzungen hervorgehoben.
 - **FR-06:** Export über Dialog (SPEC-0004).
 - **FR-07:** Letzte Einstellungen (Dateipfad, Regelkonfiguration) werden gespeichert.
+- **FR-09 (Abstraktion):** Die GUI nutzt `Planer` mit Fortschritts-Callback und Abbruchsignal (SPEC-0002 FR-12) und speichert Einstellungen über eine Schnittstelle `Einstellungsspeicher` (Qt-unabhängig, Standard: YAML-Datei).
 - **FR-08:** Die GUI enthält keine Fachlogik; sie ruft nur die Library-Schnittstellen auf.
 
 ## 5. Nicht-funktionale Anforderungen
@@ -107,3 +108,4 @@ Feature: GUI-Ablauf
 | Datum      | Version | Autor        | Änderung            |
 |------------|---------|--------------|---------------------|
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
+| 2026-10-19 | 0.3.0   | Boris Brünen | SOLID-Review: Abhängigkeitsrichtung und Abstraktionen präzisiert |

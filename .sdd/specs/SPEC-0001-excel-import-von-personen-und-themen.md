@@ -6,17 +6,17 @@ status: draft
 owner: "Boris Brünen"
 created: 2026-10-19
 updated: 2026-10-19
-version: 0.2.0
+version: 0.3.0
 priority: high
 tags: [import, excel]
-depends_on: []
-contracts: []
-tests: []
+depends_on: ["SPEC-0002"]
+contracts: ["CON-0001", "CON-0002"]
+tests: ["TST-0001", "TST-0002"]
 ---
 
 # Excel-Import von Personen und Themen
 
-> **Status:** draft · **Owner:** Boris Brünen · **Version:** 0.2.0
+> **Status:** draft · **Owner:** Boris Brünen · **Version:** 0.3.0
 
 ## 1. Kontext & Motivation
 
@@ -50,6 +50,7 @@ KonfiPlaner stellt Personen zu Terminen zusammen. Die Eingangsdaten liegen bei d
 - **FR-05:** Das Themenset ergibt sich aus `Themen`; fehlt das Blatt, aus den in `Personen` genannten Themen (dann mit Standardwerten, in der GUI anpassbar). Unbekannte Themen bei vorhandenem Blatt `Themen` sind ein Fehler.
 - **FR-06:** Spaltenüberschriften werden unabhängig von Groß-/Kleinschreibung und Leerzeichen erkannt; die Spaltenzuordnung ist konfigurierbar.
 - **FR-07:** Der Import liefert eine Fehlerliste (Blatt, Zeile, Spalte, Meldung); bei mindestens einem Fehler wird kein Modell geliefert.
+- **FR-09 (Abhängigkeit):** Der Import erzeugt ausschließlich Objekte des Domänenmodells aus SPEC-0002 (Contract CON-0003) und kennt weder Solver noch GUI.
 - **FR-08:** Doppelte Personen werden als Warnung gemeldet.
 
 ## 5. Nicht-funktionale Anforderungen
@@ -114,3 +115,4 @@ Feature: Excel-Import
 |------------|---------|--------------|---------------------|
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
 | 2026-10-19 | 0.2.0   | Boris Brünen | Klärung: Mindestanzahl, Wichtigkeit, Excel-Layout, anpassbare Grundregeln |
+| 2026-10-19 | 0.3.0   | Boris Brünen | SOLID-Review: Abhängigkeitsrichtung und Abstraktionen präzisiert |

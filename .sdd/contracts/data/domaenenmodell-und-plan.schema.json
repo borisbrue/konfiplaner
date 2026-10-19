@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://konfiplaner.local/schemas/plan.schema.json",
+  "title": "Plan",
+  "description": "SPEC-0002 / CON-0003. Ergebnis der Planung.",
+  "type": "object",
+  "required": [
+    "status",
+    "termine"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "enum": [
+        "optimal",
+        "machbar",
+        "kein_plan"
+      ]
+    },
+    "seed": {
+      "type": "integer"
+    },
+    "begruendung": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "termine": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "thema",
+          "start_slot",
+          "anzahl_slots",
+          "teilnehmer"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "thema": {
+            "type": "string",
+            "minLength": 1
+          },
+          "start_slot": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "anzahl_slots": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "teilnehmer": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "verstoesse": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "restriktion",
+          "text"
+        ],
+        "properties": {
+          "restriktion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "kein_plan"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "begruendung"
+        ]
+      }
+    }
+  ]
+}

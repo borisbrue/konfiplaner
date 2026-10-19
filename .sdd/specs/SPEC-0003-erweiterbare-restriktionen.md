@@ -6,17 +6,17 @@ status: draft
 owner: "Boris Brünen"
 created: 2026-10-19
 updated: 2026-10-19
-version: 0.2.0
+version: 0.3.0
 priority: high
 tags: [restrictions, plugin]
 depends_on: []
-contracts: []
-tests: []
+contracts: ["CON-0006", "CON-0007"]
+tests: ["TST-0006", "TST-0007"]
 ---
 
 # Erweiterbare Restriktionen
 
-> **Status:** draft · **Owner:** Boris Brünen · **Version:** 0.2.0
+> **Status:** draft · **Owner:** Boris Brünen · **Version:** 0.3.0
 
 ## 1. Kontext & Motivation
 
@@ -48,6 +48,7 @@ Die Liste der Planungsregeln wird wachsen (z. B. „Person A nie mit Person B", 
 - **FR-03:** Auch die mitgelieferten Grundregeln sind anpassbar: je Restriktion Aktivierung, Typ (hart/weich/aus), Gewicht und Parameter in einer Konfigurationsdatei (YAML) und in der GUI änderbar, ohne Codeänderung.
 - **FR-04:** Mitgelieferte Restriktionen: Themenabdeckung, Mindestanzahl, Schwerpunkte, keine Überschneidung, Verfügbarkeit, Wichtigkeitsgewichtung.
 - **FR-05:** Optional können Regeln aus Excel (Blatt `Regeln`) mit Parametern geladen werden.
+- **FR-07 (Abstraktion):** `anwenden` erhält einen abstrakten `Planungskontext` (Variablen für Termin-Slot und Teilnahme, Methoden zum Hinzufügen harter Bedingungen und gewichteter Strafterme), nicht das konkrete Solver-Objekt. Der Kontext wird vom Solver-Adapter bereitgestellt.
 - **FR-06:** Unbekannte oder fehlerhaft parametrierte Restriktionen führen zu einer klaren Fehlermeldung vor dem Solverlauf.
 
 ## 5. Nicht-funktionale Anforderungen
@@ -111,3 +112,4 @@ Feature: Restriktionen
 |------------|---------|--------------|---------------------|
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
 | 2026-10-19 | 0.2.0   | Boris Brünen | Klärung: Mindestanzahl, Wichtigkeit, Excel-Layout, anpassbare Grundregeln |
+| 2026-10-19 | 0.3.0   | Boris Brünen | SOLID-Review: Abhängigkeitsrichtung und Abstraktionen präzisiert |
