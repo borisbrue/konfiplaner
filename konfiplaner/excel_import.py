@@ -1,0 +1,367 @@
+"""Excel-Import von Personen, Themen, Zeitslots und Verfügbarkeiten (SPEC-0001).
+
+Der Import kennt weder Solver noch GUI: Er erzeugt nur Objekte des Domänenmodells.
+"""
+
+from __future__ import annotations
+
+import re
+import zipfile
+from dataclasses import dataclass, field
+from datetime import datetime, time
+from pathlib import Path
+from typing import Any
+
+from openpyxl import load_workbook
+from openpyxl.utils.exceptions import InvalidFileException
+
+from konfiplaner.modell import Modell, ModellFehler, Person, Thema, Zeitslot
+
+STANDARD_WICHTIGKEIT = 3
+STANDARD_MINDESTANZAHL = 1
+STANDARD_DAUER_MIN = 45
+
+BLAETTER = {
+    "Personen": ("name", "thema_1", "thema_2"),
+    "Themen": ("name", "wichtigkeit", "mindestanzahl", "dauer"),
+    "Zeitslots": ("tag", "start", "ende"),
+    "Verfügbarkeiten": ("person", "tag", "start"),
+}
+PFLICHTBLAETTER = ("Personen",)
+
+# Kanonischer Spaltenname -> akzeptierte Überschriften (normalisiert, siehe `_norm`)
+STANDARD_ALIASSE: dict[str, tuple[str, ...]] = {
+    "name": ("name", "vorname nachname", "konfirmand", "person"),
+    "thema_1": ("thema 1", "thema1", "schwerpunkt 1", "schwerpunkt1", "erstes thema"),
+    "thema_2": ("thema 2", "thema2", "schwerpunkt 2", "schwerpunkt2", "zweites thema"),
+    "wichtigkeit": ("wichtigkeit", "prioritaet", "priorität"),
+    "mindestanzahl": ("mindestanzahl", "mindestteilnehmer", "min"),
+    "dauer": ("dauer", "dauer min", "dauer in minuten", "minuten"),
+    "tag": ("tag", "datum"),
+    "start": ("start", "beginn", "von"),
+    "ende": ("ende", "bis"),
+    "person": ("person", "name"),
+}
+
+
+class ImportDateiFehler(Exception):
+    """Die Datei ist keine lesbare Excel-Datei (beschädigt, falsches Format, passwortgeschützt)."""
+
+
+@dataclass(frozen=True)
+class Meldung:
+    schwere: str  # "fehler" | "warnung"
+    blatt: str
+    zeile: int
+    spalte: str
+    text: str
+
+
+@dataclass
+class Importergebnis:
+    """Ergebnis eines Imports. `modell` gibt es nur ohne Fehler und mit vorhandenen Zeitslots."""
+
+    meldungen: list[Meldung] = field(default_factory=list)
+    personen: list[Person] = field(default_factory=list)
+    themen: list[Thema] = field(default_factory=list)
+    themen_aus_blatt: bool = False
+    zeitslots: list[Zeitslot] = field(default_factory=list)
+    verfuegbarkeit: dict[str, set[int]] = field(default_factory=dict)
+    quelle: dict[tuple[str, int], str] = field(default_factory=dict)
+
+    @property
+    def fehler(self) -> list[Meldung]:
+        return [m for m in self.meldungen if m.schwere == "fehler"]
+
+    @property
+    def warnungen(self) -> list[Meldung]:
+        return [m for m in self.meldungen if m.schwere == "warnung"]
+
+    @property
+    def modell(self) -> Modell | None:
+        if self.fehler or not self.zeitslots:
+            return None
+        return self.baue_modell(self.themen, self.zeitslots, self.verfuegbarkeit)
+
+    def to_dict(self) -> dict:
+        """Darstellung gemäß CON-0001 (Schema `importmodell-und-fehlerliste`)."""
+        d: dict = {
+            "meldungen": [
+                {"schwere": m.schwere, "blatt": m.blatt, "zeile": m.zeile, "spalte": m.spalte, "text": m.text}
+                for m in self.meldungen
+            ]
+        }
+        modell = self.modell
+        if modell is not None:
+            d["modell"] = {
+                "personen": [{"name": p.name, "themen": list(p.themen)} for p in modell.personen],
+                "themen": [
+                    {
+                        "name": t.name,
+                        "wichtigkeit": t.wichtigkeit,
+                        "mindestanzahl": t.mindestanzahl,
+                        "dauer_min": t.dauer_min,
+                    }
+                    for t in modell.themen
+                ],
+                "zeitslots": [
+                    {"tag": s.tag, "start": f"{s.start:%H:%M}", "ende": f"{s.ende:%H:%M}"}
+                    for s in modell.zeitslots
+                ],
+                "verfuegbarkeiten": [
+                    {"person": p, "slot": str(i)}
+                    for p, slots in sorted(modell.verfuegbarkeit.items())
+                    for i in sorted(slots)
+                ],
+            }
+        return d
+
+    def baue_modell(
+        self,
+        themen: list[Thema],
+        zeitslots: list[Zeitslot],
+        verfuegbarkeit: dict[str, set[int]] | None = None,
+    ) -> Modell:
+        """Modell aus den importierten Personen und (ggf. in der GUI ergänzten) Themen und Slots."""
+        return Modell(themen, self.personen, zeitslots, verfuegbarkeit or {})
+
+
+def _norm(text: Any) -> str:
+    return re.sub(r"[\s_\-.:]+", " ", str(text or "").strip().lower()).strip()
+
+
+def _leer(wert: Any) -> bool:
+    return wert is None or (isinstance(wert, str) and not wert.strip())
+
+
+def importiere(pfad: str | Path, zuordnung: dict[str, list[str]] | None = None) -> Importergebnis:
+    """Liest eine `.xlsx`-Datei. `zuordnung` ergänzt die Überschriften-Aliasse je Spalte."""
+    pfad = Path(pfad)
+    try:
+        mappe = load_workbook(pfad, data_only=True, read_only=True)
+    except (zipfile.BadZipFile, InvalidFileException, KeyError, OSError, ValueError) as e:
+        raise ImportDateiFehler(
+            f"{pfad.name} ist keine lesbare Excel-Datei (beschädigt, passwortgeschützt oder falsches Format)"
+        ) from e
+    try:
+        return _Leser(mappe, zuordnung or {}).lese()
+    finally:
+        mappe.close()
+
+
+class _Leser:
+    def __init__(self, mappe, zuordnung: dict[str, list[str]]) -> None:
+        self.mappe = mappe
+        self.aliasse = {
+            k: {_norm(a) for a in (*STANDARD_ALIASSE.get(k, (k,)), *zuordnung.get(k, ()))}
+            for k in {*STANDARD_ALIASSE, *zuordnung}
+        }
+        self.erg = Importergebnis()
+        self._blaetter = {_norm(n): n for n in mappe.sheetnames}
+
+    # ── Hilfen ──────────────────────────────────────────────────────────────
+    def _meld(self, schwere: str, blatt: str, zeile: int, spalte: str, text: str) -> None:
+        self.erg.meldungen.append(Meldung(schwere, blatt, zeile, spalte, text))
+
+    def _zeilen(self, blatt: str) -> tuple[dict[str, int], list[tuple[int, list[Any]]]] | None:
+        """Spaltenindex je kanonischem Namen und die nicht leeren Datenzeilen (Excel-Zeilennummer, Werte)."""
+        echt = self._blaetter.get(_norm(blatt))
+        if echt is None:
+            return None
+        ws = self.mappe[echt]
+        zeilen = list(ws.iter_rows(values_only=True))
+        if not zeilen:
+            self._meld("fehler", blatt, 1, "", "Blatt ist leer")
+            return {}, []
+        kopf = [_norm(c) for c in zeilen[0]]
+        spalten: dict[str, int] = {}
+        for kanon in BLAETTER[blatt]:
+            for i, h in enumerate(kopf):
+                if h in self.aliasse[kanon]:
+                    spalten[kanon] = i
+                    break
+            else:
+                self._meld(
+                    "fehler",
+                    blatt,
+                    1,
+                    kanon.replace("_", " ").capitalize(),
+                    f"Spalte {kanon.replace('_', ' ')} fehlt",
+                )
+        daten = [(i, list(z)) for i, z in enumerate(zeilen[1:], start=2) if not all(_leer(c) for c in z)]
+        return spalten, daten
+
+    @staticmethod
+    def _wert(zeile: list[Any], spalten: dict[str, int], name: str) -> Any:
+        i = spalten.get(name)
+        return zeile[i] if i is not None and i < len(zeile) else None
+
+    def _text(self, blatt, nr, zeile, spalten, name, titel) -> str | None:
+        w = self._wert(zeile, spalten, name)
+        if _leer(w):
+            self._meld("fehler", blatt, nr, titel, f"{titel} fehlt")
+            return None
+        return str(w).strip()
+
+    def _zahl(
+        self, blatt, nr, zeile, spalten, name, titel, minimum, maximum=None, standard=None
+    ) -> int | None:
+        w = self._wert(zeile, spalten, name)
+        if _leer(w):
+            if standard is not None:
+                return standard
+            self._meld("fehler", blatt, nr, titel, f"{titel} fehlt")
+            return None
+        try:
+            z = float(str(w).replace(",", ".")) if isinstance(w, str) else float(w)
+        except (TypeError, ValueError):
+            z = None
+        if z is None or z != int(z) or z < minimum or (maximum is not None and z > maximum):
+            grenze = f"{minimum} bis {maximum}" if maximum else f"mindestens {minimum}"
+            self._meld(
+                "fehler", blatt, nr, titel, f"{titel} muss eine ganze Zahl sein ({grenze}), nicht {w!r}"
+            )
+            return None
+        return int(z)
+
+    def _zeit(self, blatt, nr, zeile, spalten, name, titel) -> time | None:
+        w = self._wert(zeile, spalten, name)
+        if isinstance(w, datetime):
+            return w.time().replace(second=0, microsecond=0)
+        if isinstance(w, time):
+            return w.replace(second=0, microsecond=0)
+        if isinstance(w, (int, float)) and not isinstance(w, bool) and 0 <= w < 1:
+            minuten = round(w * 24 * 60)
+            return time(minuten // 60 % 24, minuten % 60)
+        if isinstance(w, str) and (m := re.fullmatch(r"\s*(\d{1,2})[:.](\d{2})(?::\d{2})?\s*", w)):
+            h, mi = int(m[1]), int(m[2])
+            if h < 24 and mi < 60:
+                return time(h, mi)
+        self._meld(
+            "fehler",
+            blatt,
+            nr,
+            titel,
+            f"{titel} ist keine Uhrzeit (HH:MM): {w!r}" if not _leer(w) else f"{titel} fehlt",
+        )
+        return None
+
+    # ── Blätter ─────────────────────────────────────────────────────────────
+    def lese(self) -> Importergebnis:
+        for pflicht in PFLICHTBLAETTER:
+            if _norm(pflicht) not in self._blaetter:
+                self._meld("fehler", pflicht, 1, "", f"Blatt {pflicht} fehlt")
+        if self.erg.fehler:
+            return self.erg
+        self._themen()
+        self._personen()
+        self._zeitslots()
+        self._verfuegbarkeit()
+        return self.erg
+
+    def _themen(self) -> None:
+        gelesen = self._zeilen("Themen")
+        if gelesen is None:
+            return
+        spalten, daten = gelesen
+        self.erg.themen_aus_blatt = True
+        gesehen: set[str] = set()
+        for nr, z in daten:
+            name = self._text("Themen", nr, z, spalten, "name", "Name")
+            wichtig = self._zahl("Themen", nr, z, spalten, "wichtigkeit", "Wichtigkeit", 1, 5)
+            mind = self._zahl("Themen", nr, z, spalten, "mindestanzahl", "Mindestanzahl", 1)
+            dauer = self._zahl("Themen", nr, z, spalten, "dauer", "Dauer", 1)
+            if name is None or None in (wichtig, mind, dauer):
+                continue
+            if name in gesehen:
+                self._meld("fehler", "Themen", nr, "Name", f"Thema {name} kommt doppelt vor")
+                continue
+            gesehen.add(name)
+            self.erg.themen.append(Thema(name, wichtig, mind, dauer))
+
+    def _personen(self) -> None:
+        spalten, daten = self._zeilen("Personen") or ({}, [])
+        bekannt = {t.name for t in self.erg.themen}
+        namen: dict[str, int] = {}
+        abgeleitet: dict[str, None] = {}
+        for nr, z in daten:
+            name = self._text("Personen", nr, z, spalten, "name", "Name")
+            t1 = self._text("Personen", nr, z, spalten, "thema_1", "Thema 1")
+            t2 = self._text("Personen", nr, z, spalten, "thema_2", "Thema 2")
+            if name is None or t1 is None or t2 is None:
+                continue
+            if t1 == t2:
+                self._meld("fehler", "Personen", nr, "Thema 2", f"Thema 1 und Thema 2 sind gleich ({t1})")
+                continue
+            fehlend = [
+                (t, s)
+                for t, s in ((t1, "Thema 1"), (t2, "Thema 2"))
+                if self.erg.themen_aus_blatt and t not in bekannt
+            ]
+            for t, spalte in fehlend:
+                self._meld("fehler", "Personen", nr, spalte, f"Unbekanntes Thema {t}: nicht im Blatt Themen")
+            if fehlend:
+                continue
+            if name in namen:
+                self._meld(
+                    "warnung",
+                    "Personen",
+                    nr,
+                    "Name",
+                    f"Name {name} kommt doppelt vor (erste Zeile {namen[name]} gilt)",
+                )
+                continue
+            namen[name] = nr
+            abgeleitet.setdefault(t1)
+            abgeleitet.setdefault(t2)
+            self.erg.personen.append(Person(name, (t1, t2)))
+            self.erg.quelle[("Personen", nr)] = name
+        if not self.erg.themen_aus_blatt:
+            self.erg.themen = [
+                Thema(t, STANDARD_WICHTIGKEIT, STANDARD_MINDESTANZAHL, STANDARD_DAUER_MIN) for t in abgeleitet
+            ]
+
+    def _zeitslots(self) -> None:
+        gelesen = self._zeilen("Zeitslots")
+        if gelesen is None:
+            return
+        spalten, daten = gelesen
+        for nr, z in daten:
+            tag = self._text("Zeitslots", nr, z, spalten, "tag", "Tag")
+            start = self._zeit("Zeitslots", nr, z, spalten, "start", "Start")
+            ende = self._zeit("Zeitslots", nr, z, spalten, "ende", "Ende")
+            if tag is None or start is None or ende is None:
+                continue
+            if ende <= start:
+                self._meld("fehler", "Zeitslots", nr, "Ende", "Ende liegt nicht nach dem Start")
+                continue
+            self.erg.zeitslots.append(Zeitslot(tag, start, ende))
+
+    def _verfuegbarkeit(self) -> None:
+        gelesen = self._zeilen("Verfügbarkeiten")
+        if gelesen is None:
+            return
+        spalten, daten = gelesen
+        if daten and not self.erg.zeitslots:
+            self._meld("fehler", "Verfügbarkeiten", 1, "", "Verfügbarkeiten brauchen das Blatt Zeitslots")
+            return
+        index = {(s.tag, s.start): i for i, s in enumerate(self.erg.zeitslots)}
+        personen = {p.name for p in self.erg.personen}
+        for nr, z in daten:
+            person = self._text("Verfügbarkeiten", nr, z, spalten, "person", "Person")
+            tag = self._text("Verfügbarkeiten", nr, z, spalten, "tag", "Tag")
+            start = self._zeit("Verfügbarkeiten", nr, z, spalten, "start", "Start")
+            if person is None or tag is None or start is None:
+                continue
+            if person not in personen:
+                self._meld("fehler", "Verfügbarkeiten", nr, "Person", f"Unbekannte Person {person}")
+                continue
+            if (tag, start) not in index:
+                self._meld(
+                    "fehler", "Verfügbarkeiten", nr, "Start", f"Kein Zeitslot am {tag} um {start:%H:%M}"
+                )
+                continue
+            self.erg.verfuegbarkeit.setdefault(person, set()).add(index[tag, start])
+
+
+__all__ = ["BLAETTER", "ImportDateiFehler", "Importergebnis", "Meldung", "ModellFehler", "importiere"]

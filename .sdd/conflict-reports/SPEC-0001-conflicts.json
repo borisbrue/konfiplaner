@@ -1,0 +1,83 @@
+{
+  "spec_id": "SPEC-0001",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0001-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-03",
+      "conflicting_contract": "SPEC-0002:FR-01",
+      "detail": "FR-03 legt für Themen Wichtigkeit (1–5), Mindestanzahl und Dauer fest. Das sind dieselben Attribute und Wertebereiche wie im Domänenmodell von SPEC-0002, also besteht das Risiko doppelter Validierungsregeln in Import und Modell.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusst: Der Import validiert zeilengenau für verständliche Meldungen (Blatt/Zeile/Spalte); das Domänenmodell (SPEC-0002) bleibt die verbindliche letzte Prüfung. Standardwerte für Themen ohne Blatt besitzt der Import (SPEC-0001 FR-05). Der Export (SPEC-0004) nutzt eigene Spalten, kein geteiltes Format.",
+        "resolved_at": "2026-10-19T14:09:34Z"
+      }
+    },
+    {
+      "id": "CF-0001-R002",
+      "type": "redundancy",
+      "severity": "low",
+      "new_contract": "FR-02",
+      "conflicting_contract": "SPEC-0002:FR-01",
+      "detail": "FR-02 verlangt zwei verschiedene Schwerpunktthemen je Person. Dieselbe Invariante (genau zwei Themen) steht im Domänenmodell von SPEC-0002, daher sollte nur eine Stelle sie verbindlich prüfen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusst: Der Import validiert zeilengenau für verständliche Meldungen (Blatt/Zeile/Spalte); das Domänenmodell (SPEC-0002) bleibt die verbindliche letzte Prüfung. Standardwerte für Themen ohne Blatt besitzt der Import (SPEC-0001 FR-05). Der Export (SPEC-0004) nutzt eigene Spalten, kein geteiltes Format.",
+        "resolved_at": "2026-10-19T14:09:34Z"
+      }
+    },
+    {
+      "id": "CF-0001-R003",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-05",
+      "conflicting_contract": "SPEC-0002:FR-01",
+      "detail": "FR-05 regelt das feste Themenset und die Standardwerte für Themen. Auch SPEC-0002 definiert das Themenset und die Pflicht, dass jedes Thema vorkommt. Es ist unklar, welche Spec die Standardwerte besitzt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusst: Der Import validiert zeilengenau für verständliche Meldungen (Blatt/Zeile/Spalte); das Domänenmodell (SPEC-0002) bleibt die verbindliche letzte Prüfung. Standardwerte für Themen ohne Blatt besitzt der Import (SPEC-0001 FR-05). Der Export (SPEC-0004) nutzt eigene Spalten, kein geteiltes Format.",
+        "resolved_at": "2026-10-19T14:09:35Z"
+      }
+    },
+    {
+      "id": "CF-0001-R004",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0004:FR-01",
+      "detail": "FR-04 (Zeitslots mit Tag, Start, Ende) und das Blatt `Termine` in SPEC-0004 FR-01 nutzen dieselben Spaltenkonventionen und Zeit-Parsing-Logik. Ein gemeinsames Format- oder Parsing-Modul vermeidet Duplikate und Abweichungen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusst: Der Import validiert zeilengenau für verständliche Meldungen (Blatt/Zeile/Spalte); das Domänenmodell (SPEC-0002) bleibt die verbindliche letzte Prüfung. Standardwerte für Themen ohne Blatt besitzt der Import (SPEC-0001 FR-05). Der Export (SPEC-0004) nutzt eigene Spalten, kein geteiltes Format.",
+        "resolved_at": "2026-10-19T14:09:35Z"
+      }
+    },
+    {
+      "id": "CF-0001-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-06",
+      "conflicting_contract": "SPEC-0004:FR-02",
+      "detail": "Die Spaltenzuordnung und Überschriftenerkennung in FR-06 betreffen dieselben Blattnamen und Spalten wie das Blatt `Personen` in SPEC-0004 FR-02. Import und Export sollten ihre Spaltenkonfiguration konsistent teilen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusst: Der Import validiert zeilengenau für verständliche Meldungen (Blatt/Zeile/Spalte); das Domänenmodell (SPEC-0002) bleibt die verbindliche letzte Prüfung. Standardwerte für Themen ohne Blatt besitzt der Import (SPEC-0001 FR-05). Der Export (SPEC-0004) nutzt eigene Spalten, kein geteiltes Format.",
+        "resolved_at": "2026-10-19T14:09:35Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-10-19T14:10:03Z"
+}

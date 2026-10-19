@@ -13,7 +13,7 @@ tests: ["TST-0001"]
 
 # Contract: Importmodell und Fehlerliste
 
-> **Spec:** SPEC-0001 · **Typ:** Daten (JSON Schema) · **Status:** review
+> **Spec:** SPEC-0001 · **Typ:** Daten (JSON Schema) · **Status:** approved
 
 ## Zweck
 
@@ -23,7 +23,7 @@ Form des Importergebnisses: Personen/Themen/Slots und Meldungen mit Blatt, Zeile
 
 Diese Regeln MÜSSEN für jede gültige Instanz gelten:
 
-- **INV-01:** Bei mindestens einer Meldung der Schwere "fehler" ist `modell` nicht vorhanden.
+- **INV-01:** Bei mindestens einer Meldung der Schwere "fehler" ist `modell` nicht vorhanden. Fehlt das Blatt `Zeitslots`, liefert der Import die Eingabedaten ohne Slots (die GUI ergänzt sie).
 - **INV-02:** Jede Person hat genau zwei verschiedene Themen.
 
 ## Beispiele

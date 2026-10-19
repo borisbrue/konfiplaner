@@ -48,3 +48,14 @@ Funktionalität: Excel-Import (SPEC-0001, CON-0002)
       | thema1       | thema_1 |
       |  THEMA 2     | thema_2 |
       | name         | name    |
+
+  Szenario: Beschädigte Datei
+    Angenommen eine Datei, die keine gültige Excel-Datei ist
+    Wenn ich importiere
+    Dann erhalte ich eine verständliche Fehlermeldung statt eines Absturzes
+
+  Szenario: Verfügbarkeiten
+    Angenommen Zeitslots und ein Blatt "Verfügbarkeiten" mit Person, Tag und Start
+    Wenn ich importiere
+    Dann ist die Person nur in den genannten Slots verfügbar
+    Und Personen ohne Zeile sind jederzeit verfügbar

@@ -5,7 +5,7 @@ title: "Importmodell und Fehlerliste"
 level: unit            # unit | integration | contract | acceptance | performance | property
 spec: SPEC-0001
 contract: CON-0001
-status: planned            # planned | implemented | passing | failing | skipped
+status: passing            # planned | implemented | passing | failing | skipped
 framework: "pytest"              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
 artifact: "tests/unit/test_importmodell_und_fehlerliste.py"
 tags: []

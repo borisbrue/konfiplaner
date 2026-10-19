@@ -6,14 +6,14 @@ type: behavior
 format: gherkin
 spec: SPEC-0001
 version: 0.1.0
-status: review
+status: approved
 artifact: ".sdd/contracts/behavior/excel-import-verhalten.feature"
 tests: ["TST-0002"]
 ---
 
 # Contract: Excel-Import Verhalten
 
-> **Spec:** SPEC-0001 · **Typ:** Verhalten (Gherkin) · **Status:** review
+> **Spec:** SPEC-0001 · **Typ:** Verhalten (Gherkin) · **Status:** approved
 
 ## Zweck
 
@@ -30,8 +30,9 @@ Jedes Szenario MUSS durch einen automatisierten Test (z.B. Cucumber, behave, Spe
 
 ## Begriffe
 
-<!-- Domänensprache, die in den Szenarien verwendet wird -->
-
-| Begriff   | Definition |
-|-----------|------------|
-| ...       | ...        |
+| Begriff | Definition |
+|---|---|
+| Meldung | Eintrag der Fehlerliste: Schwere (`fehler`/`warnung`), Blatt, Zeile (Excel-Zeile), Spalte, Text |
+| Minimalformat | Blatt `Personen` mit Name, Thema 1, Thema 2 |
+| Standardwerte | Wichtigkeit 3, Mindestanzahl 1, Dauer 45 Minuten für Themen ohne Blatt `Themen` |
+| Slot | Zeile des Blatts `Zeitslots`, identifiziert durch Tag + Start |
