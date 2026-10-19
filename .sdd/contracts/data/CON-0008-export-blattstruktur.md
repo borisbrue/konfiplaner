@@ -13,7 +13,7 @@ tests: ["TST-0008"]
 
 # Contract: Export-Blattstruktur
 
-> **Spec:** SPEC-0004 · **Typ:** Daten (JSON Schema) · **Status:** review
+> **Spec:** SPEC-0004 · **Typ:** Daten (JSON Schema) · **Status:** approved
 
 ## Zweck
 
@@ -30,7 +30,7 @@ Diese Regeln MÜSSEN für jede gültige Instanz gelten:
 **Gültig:**
 ```json
 {
-  "Termine": ["Tag", "Start", "Ende", "Thema", "Teilnehmerzahl"],
+  "Termine": ["Tag", "Start", "Ende", "Thema", "Teilnehmerzahl", "Teilnehmende"],
   "Personen": ["Name", "Tag", "Start", "Ende", "Thema"],
   "Themen": ["Thema", "Wichtigkeit", "Mindestanzahl", "Teilnehmerzahl", "Erfüllt"],
   "Hinweise": ["Art", "Text"]

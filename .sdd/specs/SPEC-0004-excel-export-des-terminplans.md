@@ -2,7 +2,7 @@
 id: SPEC-0004
 title: "Excel-Export des Terminplans"
 type: feature
-status: draft
+status: implemented
 owner: "Boris Brünen"
 created: 2026-10-19
 updated: 2026-10-19
@@ -10,13 +10,20 @@ version: 0.1.0
 priority: medium
 tags: [export, excel]
 depends_on: ["SPEC-0002"]
+fr_test_map:
+  FR-01: TST-0009
+  FR-02: TST-0009
+  FR-03: TST-0009
+  FR-04: TST-0009
+  FR-05: TST-0009
+  FR-06: TST-0008
 contracts: ["CON-0008", "CON-0009"]
 tests: ["TST-0008", "TST-0009"]
 ---
 
 # Excel-Export des Terminplans
 
-> **Status:** draft · **Owner:** Boris Brünen · **Version:** 0.1.0
+> **Status:** implemented · **Owner:** Boris Brünen · **Version:** 0.1.0
 
 ## 1. Kontext & Motivation
 
@@ -42,7 +49,7 @@ Der berechnete Plan muss weitergegeben werden. Da die Eingaben in Excel vorliege
 
 ## 4. Funktionale Anforderungen
 
-- **FR-01:** Blatt `Termine`: eine Zeile je Termin (Tag, Start, Ende, Thema, Teilnehmerzahl).
+- **FR-01:** Blatt `Termine`: eine Zeile je Termin (Tag, Start, Ende, Thema, Teilnehmerzahl, Teilnehmende).
 - **FR-02:** Blatt `Personen`: je Person ihre Termine in zeitlicher Reihenfolge.
 - **FR-03:** Blatt `Themen`: Auslastung je Thema gegenüber Mindestanzahl, Kennzeichnung von Wichtigkeit.
 - **FR-04:** Blatt `Hinweise`: Warnungen, verletzte weiche Restriktionen, Kennzeichen „nicht optimal".
@@ -77,14 +84,14 @@ Feature: Export
 
 | Contract-ID | Typ  | Was wird garantiert?                 |
 |-------------|------|--------------------------------------|
-| CON-XXXX    | data | Blatt- und Spaltenstruktur des Exports |
+| CON-0008    | data | Blatt- und Spaltenstruktur des Exports |
 
 ## 9. Tests (wie wird verifiziert)
 
 | Test-ID  | Level      | Was prüft der Test?                   |
 |----------|------------|---------------------------------------|
-| TST-XXXX | contract   | Blattstruktur                         |
-| TST-XXXX | acceptance | Gherkin aus Sektion 6                 |
+| TST-0008 | unit       | Blattstruktur                         |
+| TST-0009 | acceptance | Gherkin-Szenarien aus CON-0009        |
 
 ## 10. Offene Fragen
 

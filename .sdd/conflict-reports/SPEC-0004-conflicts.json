@@ -1,0 +1,53 @@
+{
+  "spec_id": "SPEC-0004",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0004-R001",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-03",
+      "conflicting_contract": "SPEC-0002:FR-NN",
+      "detail": "Die Auslastung je Thema gegenüber der Mindestanzahl im Blatt 'Themen' wertet dieselbe Mindestanzahl-Regel aus, die SPEC-0002 im Solver als harte Bedingung erzwingt, daher sollte der Export die Werte aus dem Plan lesen und nicht neu berechnen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Export vergleicht nur Teilnehmerzahl aus dem Plan mit der Mindestanzahl aus dem Modell (reine Anzeige 'Erfüllt'), keine Neuberechnung der Solver-Regel.",
+        "resolved_at": "2026-10-19T13:21:40Z"
+      }
+    },
+    {
+      "id": "CF-0004-R002",
+      "type": "redundancy",
+      "severity": "medium",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0002:FR-NN",
+      "detail": "Das Blatt 'Hinweise' mit Kennzeichen 'nicht optimal' und verletzten weichen Restriktionen dupliziert die Status- und Verstoßinformationen, die der Solver bereits im Plan liefert, und darf diese nicht eigenständig ermitteln.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Export liest Status, Verstöße, Begründung und Warnungen ausschließlich aus dem Plan (SPEC-0004 FR-06), ermittelt nichts selbst.",
+        "resolved_at": "2026-10-19T13:21:40Z"
+      }
+    },
+    {
+      "id": "CF-0004-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0003:FR-NN",
+      "detail": "Die Verstoßmeldungen für weiche Restriktionen im Blatt 'Hinweise' überschneiden sich mit den Begründungen der registrierten Restriktionen aus SPEC-0003, und der Export sollte die Texte der Restriktionen verwenden statt eigener Formulierungen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Verstoßtexte stammen aus Plan.verstoesse und damit aus den Restriktionen; der Export formuliert keine eigenen.",
+        "resolved_at": "2026-10-19T13:21:40Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-10-19T13:23:16Z"
+}
