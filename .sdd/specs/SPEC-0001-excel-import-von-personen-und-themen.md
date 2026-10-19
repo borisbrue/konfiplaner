@@ -22,6 +22,7 @@ fr_test_map:
   FR-09: TST-0001
   FR-10: TST-0002
   FR-11: TST-0002
+  FR-12: TST-0002
 contracts: ["CON-0001", "CON-0002"]
 tests: ["TST-0001", "TST-0002"]
 ---
@@ -64,6 +65,7 @@ KonfiPlaner stellt Personen zu Terminen zusammen. Die Eingangsdaten liegen bei d
 - **FR-07:** Der Import liefert eine Fehlerliste (Blatt, Zeile, Spalte, Meldung); bei mindestens einem Fehler wird kein Modell geliefert.
 - **FR-10 (Zeilennummern):** Zeilennummern in Meldungen sind die Excel-Zeilen (Kopfzeile = 1).
 - **FR-11 (Format-Auswahl):** `importiere` ist die einzige Einstiegsstelle. Sie wählt das Format anhand der Spalten: Blätter mit Nachname und Vorname lesen als Lehrerliste (SPEC-0007), sonst gilt dieses Minimalformat. Fehler und Warnungen verwenden in beiden Formaten dieselbe Meldungsstruktur.
+- **FR-12 (Blatt Konferenzen, SPEC-0008):** Das optionale Blatt `Konferenzen` legt feste Termine je Konferenz fest und ersetzt Zeitslots und Zeitraster-Formular.
 - **FR-09 (Abhängigkeit):** Der Import erzeugt ausschließlich Objekte des Domänenmodells aus SPEC-0002 (Contract CON-0003) und kennt weder Solver noch GUI.
 - **FR-08:** Doppelte Personen werden als Warnung gemeldet.
 
@@ -133,3 +135,4 @@ Feature: Excel-Import
 | 2026-10-19 | 0.3.0   | Boris Brünen | SOLID-Review: Abhängigkeitsrichtung und Abstraktionen präzisiert |
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0006 (Vorsitz), Version unverändert |
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0007 (0..n Schwerpunkte), Version unverändert |
+| 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0008 (Festtermine, Rangfaktor), Version unverändert |

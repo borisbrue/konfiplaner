@@ -22,6 +22,7 @@ fr_test_map:
   FR-09: TST-0011
   FR-10: TST-0010
   FR-11: TST-0011
+  FR-12: TST-0010
 contracts: ["CON-0010"]
 tests: ["TST-0010", "TST-0011"]
 ---
@@ -65,6 +66,7 @@ Planer:innen sollen ohne Kommandozeile arbeiten: Excel laden, Regeln wählen, pl
 - **FR-06:** Export über Dialog (SPEC-0004).
 - **FR-07:** Letzte Einstellungen (Dateipfad, Regelkonfiguration) werden gespeichert.
 - **FR-09 (Abstraktion):** Die GUI nutzt `Planer` mit Fortschritts-Callback und Abbruchsignal (SPEC-0002 FR-12) und speichert Einstellungen über eine Schnittstelle `Einstellungsspeicher` (Qt-unabhängig, Standard: YAML-Datei).
+- **FR-12 (Konferenztermine, SPEC-0008 FR-11):** Bei Festterminen zeigt die Seite „Daten" einen Reiter „Termine" und schaltet das Zeitraster-Formular ab.
 - **FR-08:** Die GUI enthält keine Fachlogik; sie ruft nur die Library-Schnittstellen auf.
 - **FR-10 (Daten ergänzen):** Fehlen in der Excel Themenwerte oder Zeitslots, kann die Seite „Daten" sie ergänzen: Wichtigkeit, Mindestanzahl, Dauer und Vorsitz (SPEC-0006 FR-08) je Thema sind in einer Tabelle bearbeitbar; Zeitslots lassen sich per Formular (Tage, Beginn, Ende, Slotlänge) erzeugen. „Planen" ist erst möglich, wenn Daten fehlerfrei und Zeitslots vorhanden sind.
 - **FR-11 (Anwendungsschicht):** Zustand und Abläufe (Laden, Themen/Slots ändern, Regeln, Planen, Export, Einstellungen) liegen in einer Qt-freien Klasse `Sitzung`; die Widgets sind dünne Ansichten darauf.
@@ -126,3 +128,4 @@ Feature: GUI-Ablauf
 | 2026-10-19 | 0.3.0   | Boris Brünen | SOLID-Review: Abhängigkeitsrichtung und Abstraktionen präzisiert |
 | 2026-10-19 | 0.4.0   | Boris Brünen | Daten ergänzen (FR-10), Anwendungsschicht (FR-11) |
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0006 (Vorsitz), Version unverändert |
+| 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0008 (Festtermine, Rangfaktor), Version unverändert |

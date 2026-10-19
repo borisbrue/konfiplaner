@@ -37,11 +37,16 @@ class Planungskontext(Protocol):
         """(Slot-Index, Startvariable) für jeden möglichen Startslot des Kandidaten."""
 
     def bedingung(
-        self, terme: list[Term], untergrenze: int | None, obergrenze: int | None, text: str
+        self,
+        terme: list[Term],
+        untergrenze: int | None,
+        obergrenze: int | None,
+        text: str,
+        faktor: float = 1.0,
     ) -> None:
         """Fordert `untergrenze <= Σ koeff*var <= obergrenze`.
 
-        Je nach Typ der Restriktion hart (muss gelten) oder weich (Verstoß kostet das Gewicht).
+        Je nach Typ der Restriktion hart (muss gelten) oder weich (Verstoß kostet Gewicht × `faktor`).
         """
 
     def strafe(self, terme: list[Term], text: str) -> None:

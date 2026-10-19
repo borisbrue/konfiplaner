@@ -33,6 +33,8 @@ from konfiplaner.zeitraster import erzeuge_slots
 log = logging.getLogger(__name__)
 
 THEMENWERTE = ("wichtigkeit", "mindestanzahl", "dauer_min")
+# Voreinstellung bei Dateien mit Konferenzterminen (SPEC-0008 FR-06): gleichzeitige Konferenzen sind erwartet
+PROFIL_FESTTERMINE = {"schwerpunkte": ("weich", 1.0)}
 STANDARD_ZEITLIMIT_S = 60.0
 STANDARD_ZEITRASTER = {"tage": "Samstag", "beginn": "09:00", "ende": "12:00", "laenge_min": 45}
 
@@ -73,6 +75,7 @@ class Sitzung:
         self.letzter_exportordner: Path | None = None
         self._mtime: float | None = None
         self.normalisierung = Normalisierung()
+        self._gesetzt: set[str] = set()  # von Hand gesetzte Regeln (verdrängen das Profil)
         self._themenwerte: dict[str, dict[str, int]] = {}
         self._lade_einstellungen()
 
@@ -104,13 +107,18 @@ class Sitzung:
             }
         regeln = daten.get("regeln")
         if isinstance(regeln, dict):
+            standard = self._basiskonfiguration()
             for name, eintrag in regeln.items():
                 try:
-                    self.konfiguration = Konfiguration.aus_dict(
-                        {"restriktionen": {name: eintrag}}, self.registry, self.konfiguration
-                    )
+                    neu = Konfiguration.aus_dict({"restriktionen": {name: eintrag}}, self.registry, standard)
                 except (KonfigurationsFehler, TypeError, KeyError):
                     log.warning("Gespeicherte Regel %s ignoriert", name)
+                    continue
+                self.konfiguration = Konfiguration.aus_dict(
+                    {"restriktionen": {name: eintrag}}, self.registry, self.konfiguration
+                )
+                if neu.einstellungen[name] != standard.einstellungen.get(name):
+                    self._gesetzt.add(name)  # weicht vom Standard ab: von Hand gesetzt
 
     def speichere(self) -> None:
         self._speicher.speichern(
@@ -124,6 +132,7 @@ class Sitzung:
                 "regeln": {
                     n: {"typ": e.typ, "gewicht": e.gewicht, "parameter": dict(e.parameter)}
                     for n, e in self.konfiguration.einstellungen.items()
+                    if n in self._gesetzt
                 },
             }
         )
@@ -144,8 +153,20 @@ class Sitzung:
         self.verfuegbarkeit = {k: set(v) for k, v in ergebnis.verfuegbarkeit.items()}
         self.plan = self.plan_modell = None
         self._mtime = pfad.stat().st_mtime
+        self._wende_profil()
         self.speichere()
         return ergebnis
+
+    def _wende_profil(self) -> None:
+        """Regeln, die niemand von Hand gesetzt hat, folgen der Datei (Festtermine -> weiche Schwerpunkte)."""
+        fest = self.ergebnis is not None and self.ergebnis.festtermine
+        standard = self._basiskonfiguration()
+        for name, (typ, gewicht) in PROFIL_FESTTERMINE.items():
+            if name in self._gesetzt or name not in standard.einstellungen:
+                continue
+            self.konfiguration.einstellungen[name] = (
+                RegelEinstellung(name, typ, gewicht) if fest else standard.einstellungen[name]
+            )
 
     def neu_laden(self) -> Importergebnis:
         if self.datei is None:
@@ -198,6 +219,10 @@ class Sitzung:
         return [p.name for p in self.ergebnis.personen] if self.ergebnis else []
 
     def erzeuge_zeitslots(self, tage: str, beginn: time, ende: time, laenge_min: int) -> list[Zeitslot]:
+        if self.ergebnis is not None and self.ergebnis.festtermine:
+            raise ModellFehler(
+                "Die Zeitslots stammen aus dem Blatt Konferenzen und lassen sich hier nicht erzeugen"
+            )
         slots = erzeuge_slots([t for t in tage.split(",")], beginn, ende, laenge_min)
         self.zeitslots = slots
         self.verfuegbarkeit = {}  # Slot-Indizes der Datei passen nicht mehr
@@ -262,14 +287,19 @@ class Sitzung:
             self.registry,
             self.konfiguration,
         )
+        self._gesetzt.add(name)
         self.speichere()
 
     def regeln_zuruecksetzen(self) -> None:
         self.konfiguration = self._basiskonfiguration()
+        self._gesetzt.clear()
+        self._wende_profil()
         self.speichere()
 
     def lade_regeldatei(self, pfad: str | Path) -> None:
+        vorher = dict(self.konfiguration.einstellungen)
         self.konfiguration = Konfiguration.aus_yaml(Path(pfad), self.registry, self.konfiguration)
+        self._gesetzt |= {n for n, e in self.konfiguration.einstellungen.items() if vorher.get(n) != e}
         self.speichere()
 
     # ── Planen und Ergebnis (FR-04, FR-05) ──────────────────────────────────

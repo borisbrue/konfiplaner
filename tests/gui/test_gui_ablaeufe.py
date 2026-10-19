@@ -1,6 +1,7 @@
 """TST-0010 – GUI-Abläufe per pytest-qt, offscreen (CON-0010). Testnamen folgen den Szenarien der .feature-Datei."""
 
 import threading
+from datetime import time
 from pathlib import Path
 
 import pytest
@@ -365,3 +366,51 @@ def test_gui_minimalformat_blendet_lehrerlisten_reiter_aus(qtbot, tmp_path):
     f.datei_oeffnen()
     assert not f.daten.reiter.isTabVisible(f.daten.TAB_NORMALISIERUNG)
     assert not f.daten.reiter.isTabVisible(f.daten.TAB_OHNE)
+
+
+# ── Konferenzplanung mit festen Terminen (SPEC-0008) ────────────────────────
+def termine_fenster(qtbot, tmp_path, *termine):
+    from tests.xlsx_helfer import lehrer_mit_terminen
+
+    zeilen = [
+        ["Eins", "Anna", "", "Deutsch", "Sport", None, None],
+        ["Zwei", "Ben", "", "Deutsch", None, None, "Deutsch"],
+        ["Drei", "Cem", "", "Sport", None, None, "Sport"],
+    ]
+    return fenster(qtbot, tmp_path, lehrer_mit_terminen(zeilen, *termine))
+
+
+def test_gui_zeigt_termine_je_konferenz_und_sperrt_das_zeitraster(qtbot, tmp_path):
+    f, _ = termine_fenster(
+        qtbot, tmp_path, ("Deutsch", "Mi", "14:00", "15:00"), ("Sport", "Mi", "15:00", "16:00")
+    )
+    f.datei_oeffnen()
+    d = f.daten
+    assert d.reiter.isTabVisible(d.TAB_TERMINE)
+    assert [z[:4] for z in d.termine.zeilen()] == [
+        ["Deutsch", "Mi", time(14), time(15)],
+        ["Sport", "Mi", time(15), time(16)],
+    ]
+    assert not d.erzeugen.isEnabled() and not d.tage.isEnabled()
+    assert "Konferenzen" in d.slot_info.text()
+    assert f.reiter.currentIndex() == SEITE_PLANEN and f.planen.planen.isEnabled()
+
+
+def test_gui_plant_gleichzeitige_konferenzen_und_zeigt_konflikte(qtbot, tmp_path):
+    f, _ = termine_fenster(
+        qtbot, tmp_path, ("Deutsch", "Mi", "14:00", "15:00"), ("Sport", "Mi", "14:00", "15:00")
+    )
+    f.datei_oeffnen()
+    plane_und_warte(qtbot, f)
+    hinweise = f.ergebnis.modelle["Hinweise"].zeilen()
+    assert ["Verstoß", "schwerpunkte: Anna Eins nimmt nicht an Schwerpunkt Sport teil"] in hinweise
+    assert "1 Verstöße" in f.ergebnis.status.text()
+    # Regel zeigt sich in der Regelverwaltung als weich (Profil), ohne dass jemand sie gesetzt hat
+    zeile = f.regeln._zeile("schwerpunkte")
+    assert f.regeln.tabelle.cellWidget(zeile, 1).currentData() == "weich"
+
+
+def test_gui_ohne_konferenzblatt_hat_keinen_termine_reiter(qtbot, tmp_path):
+    f, _ = fenster(qtbot, tmp_path, {"Personen": PERSONEN_VIELE, "Zeitslots": SLOTS})
+    f.datei_oeffnen()
+    assert not f.daten.reiter.isTabVisible(f.daten.TAB_TERMINE) and f.daten.erzeugen.isEnabled()

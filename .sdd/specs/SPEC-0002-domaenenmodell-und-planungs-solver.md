@@ -27,6 +27,7 @@ fr_test_map:
   FR-10: TST-0005
   FR-11: TST-0003
   FR-12: TST-0004
+  FR-13: TST-0004
 contracts:
 - CON-0003
 - CON-0004
@@ -72,6 +73,7 @@ Kern von KonfiPlaner: aus Personen, Themen und Zeitslots einen Terminplan berech
 - **FR-01 (Modell):** Domänenobjekte `Thema` (Name, Wichtigkeit, Mindestanzahl, Dauer), `Person` (Name, 0 bis n verschiedene, geordnete Schwerpunktthemen – das Minimalformat des Imports liefert genau 2, Lehrerlisten 0 bis 3 und mehr; SPEC-0007 FR-12, Verfügbarkeit), `Zeitslot`, `Termin` (Thema, Slot(s), Teilnehmer), `Plan`.
 - **FR-02 (Themenabdeckung):** Jedes Thema findet statt. Es darf genau einen Termin je Thema geben; mehr sind möglich, aber nicht erforderlich. Kein Thema darf entfallen (hart, aber über SPEC-0003 anpassbar).
 - **FR-03 (Mindestanzahl):** `Mindestanzahl` ist die Mindest-Teilnehmerzahl pro Termin (der Vorsitz zählt mit, SPEC-0006); jeder Termin des Themas erreicht sie (hart, anpassbar).
+- **FR-13 (Festtermine, SPEC-0008):** Ein `Thema` kann feste Termine (Zeitfenster) haben; dann findet es genau dort statt und der Solver wählt keine Startslots. Eine Person nimmt je Thema an höchstens einem Termin teil (der Vorsitz an allen).
 - **FR-04 (Dauer):** Ein Termin belegt aufeinanderfolgende Slots, die mindestens die Themendauer abdecken. Der Startslot je Termin ist die zentrale Stellgröße des Solvers.
 - **FR-05 (Schwerpunkte):** Jede Person wird mindestens einem Termin je Schwerpunktthema zugeordnet (hart, sofern verfügbar). Seit SPEC-0006 nimmt außerdem der Vorsitz eines Themas an dessen Terminen teil, auch ohne Schwerpunkt; er ist in jedem Termin des Themas, die Regel „höchstens ein Termin je Person und Thema" gilt für ihn nicht.
 - **FR-06 (Keine Überschneidung):** Eine Person nimmt nie an zwei zeitlich überlappenden Terminen teil (hart).
@@ -153,3 +155,4 @@ Feature: Planung
 | 2026-10-19 | 0.3.0   | Boris Brünen | SOLID-Review: Abhängigkeitsrichtung und Abstraktionen präzisiert |
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0006 (Vorsitz), Version unverändert |
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0007 (0..n Schwerpunkte), Version unverändert |
+| 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0008 (Festtermine, Rangfaktor), Version unverändert |

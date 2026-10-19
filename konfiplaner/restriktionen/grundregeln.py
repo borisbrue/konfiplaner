@@ -8,6 +8,7 @@ from konfiplaner.restriktionen.basis import Registry, Restriktion
 from konfiplaner.restriktionen.kontext import Planungskontext
 
 STANDARD_REGISTRY = Registry()
+RANGFAKTOREN = (100, 10, 1)  # Konferenz I, II, III und weitere (SPEC-0008 FR-05)
 
 
 def restriktion(klasse):
@@ -52,7 +53,9 @@ class Schwerpunkte(Restriktion):
 
     def anwenden(self, ctx: Planungskontext, werte: dict[str, Any]) -> None:
         for p in ctx.modell.personen:
-            for t in p.themen:
+            for rang, t in enumerate(p.themen):
+                # Rangfolge: entgangene Teilnahme an Konferenz I kostet mehr als an II, an II mehr als an III
+                faktor = RANGFAKTOREN[min(rang, len(RANGFAKTOREN) - 1)]
                 # Der Vorsitz ist in allen Terminen seines Themas; hier genügt mindestens einer
                 obergrenze = None if ctx.modell.thema(t).vorsitz == p.name else 1
                 ctx.bedingung(
@@ -60,6 +63,7 @@ class Schwerpunkte(Restriktion):
                     1,
                     obergrenze,
                     f"{p.name} nimmt nicht an Schwerpunkt {t} teil",
+                    faktor,
                 )
 
 

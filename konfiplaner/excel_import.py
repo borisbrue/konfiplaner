@@ -5,6 +5,7 @@ Der Import kennt weder Solver noch GUI: Er erzeugt nur Objekte des Domänenmodel
 
 from __future__ import annotations
 
+import dataclasses
 import re
 import zipfile
 from dataclasses import dataclass, field
@@ -17,7 +18,8 @@ from openpyxl.utils.exceptions import InvalidFileException
 
 from konfiplaner.lehrerliste import ist_lehrerliste, lese_lehrerliste
 from konfiplaner.modell import Modell, ModellFehler, Person, Thema, Zeitslot
-from konfiplaner.normalisierung import Aufloesung, Normalisierung
+from konfiplaner.normalisierung import SICHER, VORSCHLAG, Aufloesung, Normalisierung
+from konfiplaner.zeitraster import raster_aus_fenstern
 
 STANDARD_WICHTIGKEIT = 3
 STANDARD_MINDESTANZAHL = 1
@@ -28,10 +30,14 @@ BLAETTER = {
     "Themen": ("name", "wichtigkeit", "mindestanzahl", "dauer"),
     "Zeitslots": ("tag", "start", "ende"),
     "Verfügbarkeiten": ("person", "tag", "start"),
+    "Konferenzen": ("konferenz", "tag", "start", "ende"),
 }
 PFLICHTBLAETTER = ("Personen",)
 # Spalten, die fehlen dürfen (kein Fehler, kein Wert)
-OPTIONALE_SPALTEN = {"Themen": ("vorsitz",)}
+OPTIONALE_SPALTEN = {
+    "Themen": ("vorsitz",),
+    "Konferenzen": ("hauptkonferenz", "wichtigkeit", "mindestanzahl"),
+}
 
 # Kanonischer Spaltenname -> akzeptierte Überschriften (normalisiert, siehe `_norm`)
 STANDARD_ALIASSE: dict[str, tuple[str, ...]] = {
@@ -42,6 +48,8 @@ STANDARD_ALIASSE: dict[str, tuple[str, ...]] = {
     "mindestanzahl": ("mindestanzahl", "mindestteilnehmer", "min"),
     "dauer": ("dauer", "dauer min", "dauer in minuten", "minuten"),
     "vorsitz": ("vorsitz", "vorsitzender", "vorsitzende", "leitung"),
+    "konferenz": ("konferenz", "fachkonferenz", "thema", "name"),
+    "hauptkonferenz": ("hauptkonferenz", "haupt", "übergeordnet"),
     "tag": ("tag", "datum"),
     "start": ("start", "beginn", "von"),
     "ende": ("ende", "bis"),
@@ -77,6 +85,7 @@ class Importergebnis:
     lehrerliste: bool = False
     aufloesungen: list[Aufloesung] = field(default_factory=list)
     ohne_konferenz: list[str] = field(default_factory=list)
+    festtermine: bool = False  # Blatt Konferenzen vorhanden (SPEC-0008)
 
     @property
     def fehler(self) -> list[Meldung]:
@@ -212,6 +221,8 @@ class _Leser:
         self.erg = Importergebnis()
         self._themen_zeilen: dict[str, int] = {}
         self._blaetter = {_norm(n): n for n in mappe.sheetnames}
+        if "konferenzen" not in self._blaetter and "konferenztermine" in self._blaetter:
+            self._blaetter["konferenzen"] = self._blaetter["konferenztermine"]
 
     # ── Hilfen ──────────────────────────────────────────────────────────────
     def _meld(self, schwere: str, blatt: str, zeile: int, spalte: str, text: str) -> None:
@@ -315,7 +326,8 @@ class _Leser:
         if blatt is not None:
             zeilen = [list(z) for z in self.mappe[blatt].iter_rows(values_only=True)]
             lese_lehrerliste(blatt, zeilen, self.normalisierung, self.erg)
-            self._zeitslots()
+            if not self._konferenzen():
+                self._zeitslots()
             self._verfuegbarkeit()
             return self.erg
         for pflicht in PFLICHTBLAETTER:
@@ -326,9 +338,154 @@ class _Leser:
         self._themen()
         self._personen()
         self._vorsitze()
-        self._zeitslots()
+        if not self._konferenzen():
+            self._zeitslots()
         self._verfuegbarkeit()
         return self.erg
+
+    # ── Konferenztermine (SPEC-0008) ─────────────────────────────────────────
+    def _merke(self, a: Aufloesung) -> None:
+        for i, bekannt in enumerate(self.erg.aufloesungen):
+            if bekannt.schluessel == a.schluessel:
+                self.erg.aufloesungen[i] = dataclasses.replace(bekannt, vorkommen=bekannt.vorkommen + 1)
+                return
+        self.erg.aufloesungen.append(dataclasses.replace(a, vorkommen=1))
+
+    def _konferenz_name(self, blatt, nr, spalte, roh, namen) -> str | None:
+        a = self.normalisierung.loese(roh, namen)
+        self._merke(a)
+        if a.status != SICHER or len(a.konferenzen) != 1:
+            hinweis = f" – Vorschlag: {', '.join(a.konferenzen)}" if a.status == VORSCHLAG else ""
+            self._meld("fehler", blatt, nr, spalte, f"{roh!r} ist nicht zugeordnet{hinweis}")
+            return None
+        return a.konferenzen[0]
+
+    def _konferenzen(self) -> bool:
+        """Liest das Blatt `Konferenzen`: feste Termine je Konferenz. True, wenn das Blatt vorhanden ist."""
+        gelesen = self._zeilen("Konferenzen")
+        if gelesen is None:
+            return False
+        blatt = self._blaetter["konferenzen"]
+        if "zeitslots" in self._blaetter:
+            self._meld(
+                "warnung",
+                "Zeitslots",
+                1,
+                "",
+                "Blatt Zeitslots wird ignoriert, die Zeiten stehen im Blatt Konferenzen",
+            )
+        spalten, daten = gelesen
+        namen = [t.name for t in self.erg.themen]
+        fenster: dict[str, list[tuple[int, Zeitslot]]] = {}
+        werte: dict[str, dict[str, tuple[int, Any]]] = {}
+        haupt: dict[str, str] = {}
+        reihenfolge: list[Zeitslot] = []
+
+        def merke_wert(name: str, feld: str, nr: int, wert: Any, spalte: str) -> None:
+            bisher = werte.setdefault(name, {}).get(feld)
+            if bisher is None:
+                werte[name][feld] = (nr, wert)
+            elif bisher[1] != wert:
+                self._meld(
+                    "fehler", blatt, nr, spalte, f"{spalte} von {name} weicht von Zeile {bisher[0]} ab"
+                )
+
+        for nr, z in daten:
+            roh = self._text(blatt, nr, z, spalten, "konferenz", "Konferenz")
+            tag = self._text(blatt, nr, z, spalten, "tag", "Tag")
+            start = self._zeit(blatt, nr, z, spalten, "start", "Start")
+            ende = self._zeit(blatt, nr, z, spalten, "ende", "Ende")
+            if roh is None or tag is None or start is None or ende is None:
+                continue
+            if ende <= start:
+                self._meld("fehler", blatt, nr, "Ende", "Ende liegt nicht nach dem Start")
+                continue
+            name = self._konferenz_name(blatt, nr, "Konferenz", roh, namen)
+            if name is None:
+                continue
+            if name not in namen:
+                self._meld(
+                    "warnung",
+                    blatt,
+                    nr,
+                    "Konferenz",
+                    f"Konferenz {name} hat keine Mitglieder, Termin ignoriert",
+                )
+                continue
+            fenster_neu = Zeitslot(tag, start, ende)
+            for andere_nr, w in fenster.get(name, []):
+                if w.tag == tag and start < w.ende and w.start < ende:
+                    self._meld(
+                        "fehler",
+                        blatt,
+                        nr,
+                        "Start",
+                        f"Termin überschneidet sich mit Zeile {andere_nr} derselben Konferenz",
+                    )
+            fenster.setdefault(name, []).append((nr, fenster_neu))
+            reihenfolge.append(fenster_neu)
+            if "wichtigkeit" in spalten and not _leer(self._wert(z, spalten, "wichtigkeit")):
+                w = self._zahl(blatt, nr, z, spalten, "wichtigkeit", "Wichtigkeit", 1, 5)
+                if w is not None:
+                    merke_wert(name, "wichtigkeit", nr, w, "Wichtigkeit")
+            if "mindestanzahl" in spalten and not _leer(self._wert(z, spalten, "mindestanzahl")):
+                m = self._zahl(blatt, nr, z, spalten, "mindestanzahl", "Mindestanzahl", 1)
+                if m is not None:
+                    merke_wert(name, "mindestanzahl", nr, m, "Mindestanzahl")
+            oben = self._wert(z, spalten, "hauptkonferenz")
+            if not _leer(oben):
+                h = self._konferenz_name(blatt, nr, "Hauptkonferenz", str(oben).strip(), namen)
+                if h is not None and h not in namen:
+                    self._meld(
+                        "fehler",
+                        blatt,
+                        nr,
+                        "Hauptkonferenz",
+                        f"Hauptkonferenz {h} ist keine bekannte Konferenz",
+                    )
+                elif h is not None:
+                    merke_wert(name, "haupt", nr, h, "Hauptkonferenz")
+                    haupt[name] = h
+        for name in namen:
+            if name not in fenster:
+                self._meld(
+                    "fehler",
+                    blatt,
+                    1,
+                    "Konferenz",
+                    f"Konferenz {name} hat keinen Termin im Blatt Konferenzen",
+                )
+        self.erg.themen = [
+            dataclasses.replace(
+                t,
+                festtermine=tuple(w for _, w in fenster.get(t.name, [])),
+                dauer_min=(fenster[t.name][0][1].dauer_min if t.name in fenster else t.dauer_min),
+                **{k: v for k, (_, v) in werte.get(t.name, {}).items()},
+            )
+            for t in self.erg.themen
+        ]
+        self.erg.zeitslots = raster_aus_fenstern(reihenfolge)
+        self.erg.festtermine = True
+        self._pruefe_reihenfolge(fenster, haupt, blatt)
+        return True
+
+    def _pruefe_reihenfolge(self, fenster, haupt: dict[str, str], blatt: str) -> None:
+        """Warnung, wenn eine Unterkonferenz nicht nach ihrer Hauptkonferenz beginnt (SPEC-0008 FR-08)."""
+        tage = list(dict.fromkeys(w.tag for ws in fenster.values() for _, w in ws))
+        for unter, ober in haupt.items():
+            for nr, u in fenster.get(unter, []):
+                if any(
+                    (tage.index(u.tag), u.start) < (tage.index(w.tag), w.ende)
+                    for _, w in fenster.get(ober, [])
+                ):
+                    self._meld(
+                        "warnung",
+                        blatt,
+                        nr,
+                        "Hauptkonferenz",
+                        f"{unter} beginnt nicht nach dem Ende von {ober}",
+                    )
+                    break
 
     def _themen(self) -> None:
         gelesen = self._zeilen("Themen")

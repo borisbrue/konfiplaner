@@ -160,13 +160,23 @@ class DatenSeite(QWidget):
         )
         o.addWidget(self.ohne_konferenz, 1)
 
+        self.termine = TabellenModell(["Konferenz", "Tag", "Start", "Ende", "Hauptkonferenz"])
+        self.termine_tabelle = _tabelle(self.termine, "Feste Termine je Konferenz")
+        termine = QWidget()
+        te = QVBoxLayout(termine)
+        te.addWidget(
+            self._hinweistext("Feste Termine aus dem Blatt Konferenzen. Der Solver verschiebt sie nicht.")
+        )
+        te.addWidget(self.termine_tabelle, 1)
+
         self.reiter = QTabWidget()
         self.reiter.addTab(vorschau, "Vorschau")
         self.reiter.addTab(themen, "Themen")
         self.reiter.addTab(slots, "Zeitslots")
         self.reiter.addTab(normalisierung, "Normalisierung")
         self.reiter.addTab(ohne, "Ohne Konferenz")
-        self.TAB_NORMALISIERUNG, self.TAB_OHNE = 3, 4
+        self.reiter.addTab(termine, "Termine")
+        self.TAB_NORMALISIERUNG, self.TAB_OHNE, self.TAB_TERMINE = 3, 4, 5
 
         teiler = QSplitter()
         teiler.setOrientation(teiler.orientation().Vertical)
@@ -216,6 +226,17 @@ class DatenSeite(QWidget):
         lehrerliste = bool(erg and erg.lehrerliste)
         self.reiter.setTabVisible(self.TAB_NORMALISIERUNG, lehrerliste)
         self.reiter.setTabVisible(self.TAB_OHNE, lehrerliste)
+        fest = bool(erg and erg.festtermine)
+        self.reiter.setTabVisible(self.TAB_TERMINE, fest)
+        self.termine.setze(
+            [
+                [t.name, f.tag, f.start, f.ende, t.haupt or ""]
+                for t in s.themen
+                for f in sorted(t.festtermine, key=lambda f: (f.tag, f.start))
+            ]
+        )
+        for feld in (self.tage, self.beginn, self.ende, self.laenge, self.erzeugen):
+            feld.setEnabled(not fest)
         self.normalisierung.neu()
         offen = sum(1 for a in erg.aufloesungen if a.status != "sicher") if lehrerliste and erg else 0
         self.vorschlaege.setEnabled(
@@ -231,6 +252,8 @@ class DatenSeite(QWidget):
         self.themen.neu()
         self.slots.setze([[z.tag, z.start, z.ende] for z in s.zeitslots])
         quelle = "aus der Datei" if erg and erg.zeitslots and s.zeitslots == erg.zeitslots else "erzeugt"
+        if fest:
+            quelle = "abgeleitet aus dem Blatt Konferenzen"
         self.slot_info.setText(
             f"{len(s.zeitslots)} Zeitslots ({quelle})" if s.zeitslots else "Keine Zeitslots"
         )

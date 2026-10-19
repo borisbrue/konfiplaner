@@ -119,6 +119,7 @@ class Hauptfenster(QMainWindow):
                 self.dialoge.fehler("Datei laden", str(e))
             return
         self._gemeldete_aenderung = None
+        self.regeln.aktualisieren()  # das Profil der Datei kann Regeln umstellen
         self.daten.aktualisieren()
         self.ergebnis.aktualisieren()
         self._aktualisiere_zustand()

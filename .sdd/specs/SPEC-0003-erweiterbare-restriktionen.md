@@ -20,6 +20,7 @@ fr_test_map:
   FR-05: TST-0007
   FR-06: TST-0006
   FR-07: TST-0007
+  FR-08: TST-0006
 contracts:
 - CON-0006
 - CON-0007
@@ -63,6 +64,7 @@ Die Liste der Planungsregeln wird wachsen (z. B. „Person A nie mit Person B", 
 - **FR-04:** Mitgelieferte Grundregeln (Bezeichner, Standard-Typ): `themenabdeckung` (hart), `mindestanzahl` (hart), `schwerpunkte` (hart), `keine_ueberschneidung` (hart), `verfuegbarkeit` (hart), `wichtigkeit` (weich).
 - **FR-05:** Optional können Regeln aus Excel (Blatt `Regeln`) mit Parametern geladen werden.
 - **FR-07 (Abstraktion):** `anwenden` erhält einen abstrakten `Planungskontext` (Variablen für Termin-Slot und Teilnahme, Methoden zum Hinzufügen harter Bedingungen und gewichteter Strafterme), nicht das konkrete Solver-Objekt. Der Kontext wird vom Solver-Adapter bereitgestellt.
+- **FR-08 (Rangfaktor, SPEC-0008):** `Planungskontext.bedingung` hat einen optionalen `faktor` (Standard 1), der die Kosten einer verletzten weichen Bedingung multipliziert. `schwerpunkte` setzt ihn nach Rang der Konferenz der Person (100, 10, 1).
 - **FR-06:** Unbekannte oder fehlerhaft parametrierte Restriktionen führen zu einer klaren Fehlermeldung vor dem Solverlauf.
 
 ## 5. Nicht-funktionale Anforderungen
@@ -127,3 +129,4 @@ Feature: Restriktionen
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
 | 2026-10-19 | 0.2.0   | Boris Brünen | Klärung: Mindestanzahl, Wichtigkeit, Excel-Layout, anpassbare Grundregeln |
 | 2026-10-19 | 0.3.0   | Boris Brünen | SOLID-Review: Abhängigkeitsrichtung und Abstraktionen präzisiert |
+| 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0008 (Festtermine, Rangfaktor), Version unverändert |

@@ -18,6 +18,8 @@ class Thema:
     mindestanzahl: int = 1
     dauer_min: int = 45
     vorsitz: str | None = None  # Name einer Person; muss in jedem Termin des Themas sein
+    festtermine: tuple[Zeitslot, ...] = ()  # feste Zeitfenster; leer = Solver wählt (SPEC-0008)
+    haupt: str | None = None  # Hauptkonferenz dieser Unterkonferenz (nur Angabe, SPEC-0008 FR-08)
 
     def __post_init__(self) -> None:
         if not self.name.strip():
@@ -82,6 +84,10 @@ class Modell:
         for t in self.themen:
             if t.vorsitz is not None and t.vorsitz not in personen:
                 raise ModellFehler(f"Thema {t.name}: unbekannter Vorsitz {t.vorsitz}")
+            if t.haupt is not None and t.haupt not in namen:
+                raise ModellFehler(f"Thema {t.name}: unbekannte Hauptkonferenz {t.haupt}")
+        for t in self.themen:
+            self.fest_bloecke(t.name)  # früh prüfen: Festtermine müssen auf das Zeitraster passen
         for name, slots in self.verfuegbarkeit.items():
             if name not in personen:
                 raise ModellFehler(f"Verfügbarkeit für unbekannte Person {name}")
@@ -105,9 +111,28 @@ class Modell:
         erlaubt = self.verfuegbarkeit.get(person)
         return erlaubt is None or slot in erlaubt
 
+    def fest_bloecke(self, thema: str) -> list[tuple[int, int]]:
+        """Feste Termine eines Themas als (Startslot, Anzahl Slots); leer ohne Festtermine."""
+        ergebnis = []
+        for f in self.thema(thema).festtermine:
+            start = next(
+                (i for i, z in enumerate(self.zeitslots) if z.tag == f.tag and z.start == f.start), None
+            )
+            ende = start
+            while ende is not None and self.zeitslots[ende].ende < f.ende:
+                ende += 1
+                if ende >= len(self.zeitslots) or not self._zusammenhaengend(ende):
+                    ende = None
+            if start is None or ende is None or self.zeitslots[ende].ende != f.ende:
+                raise ModellFehler(
+                    f"Termin von {thema} ({f.tag} {f.start:%H:%M}–{f.ende:%H:%M}) passt nicht auf die Zeitslots"
+                )
+            ergebnis.append((start, ende - start + 1))
+        return ergebnis
+
     def bloecke_fehlen(self) -> list[str]:
         """Themen, deren Dauer in keinen zusammenhängenden Zeitblock passt."""
-        return [t.name for t in self.themen if not self.bloecke(t.name)]
+        return [t.name for t in self.themen if not t.festtermine and not self.bloecke(t.name)]
 
     def _zusammenhaengend(self, i: int) -> bool:
         a, b = self.zeitslots[i - 1], self.zeitslots[i]

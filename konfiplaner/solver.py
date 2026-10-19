@@ -36,7 +36,7 @@ class _CpSatKontext:
         self._k: dict[str, int] = {}
         self._aktiv: dict[tuple[str, int], cp_model.IntVar] = {}
         self._start: dict[tuple[str, int, int], cp_model.IntVar] = {}
-        self._bloecke: dict[str, dict[int, int]] = {}
+        self._bloecke: dict[tuple[str, int], dict[int, int]] = {}  # (Thema, Kandidat) -> Start -> Slots
         self._teil: dict[tuple[str, str, int], cp_model.IntVar] = {}
         self._belegt: dict[tuple[str, int, int], cp_model.IntVar] = {}
         self._praesenz: dict[tuple[str, str, int, int], cp_model.IntVar] = {}
@@ -54,19 +54,26 @@ class _CpSatKontext:
         m, cp = self.modell, self.cp
         for t in m.themen:
             n = len(m.personen_zu(t.name))
-            if t.vorsitz is None:
-                moegliche = n // t.mindestanzahl
-            else:  # der Vorsitz sitzt in jedem Termin: die übrigen müssen nur Mindestanzahl - 1 stellen
-                moegliche = (n - 1) // max(1, t.mindestanzahl - 1)
-            self._k[t.name] = max(1, min(MAX_TERMINE_JE_THEMA, moegliche))
-            self._bloecke[t.name] = m.bloecke(t.name)
-            if not self._bloecke[t.name]:
+            fest = m.fest_bloecke(t.name)
+            if fest:  # feste Termine: genau diese finden statt, der Solver verschiebt nichts
+                self._k[t.name] = len(fest)
+            else:
+                if t.vorsitz is None:
+                    moegliche = n // t.mindestanzahl
+                else:  # der Vorsitz sitzt in jedem Termin: die übrigen müssen nur Mindestanzahl - 1 stellen
+                    moegliche = (n - 1) // max(1, t.mindestanzahl - 1)
+                self._k[t.name] = max(1, min(MAX_TERMINE_JE_THEMA, moegliche))
+            frei = {} if fest else m.bloecke(t.name)
+            if not fest and not frei:
                 self.keine_startslots.append(t.name)
             for j in range(self._k[t.name]):
+                self._bloecke[t.name, j] = {fest[j][0]: fest[j][1]} if fest else frei
                 a = cp.NewBoolVar(f"aktiv_{t.name}_{j}")
                 self._aktiv[t.name, j] = a
+                if fest:
+                    cp.Add(a == 1)
                 starts = []
-                for s in self._bloecke[t.name]:
+                for s in self._bloecke[t.name, j]:
                     v = cp.NewBoolVar(f"start_{t.name}_{j}_{s}")
                     self._start[t.name, j, s] = v
                     starts.append(v)
@@ -95,7 +102,9 @@ class _CpSatKontext:
     def _belegung(self, thema: str, j: int, slot: int) -> cp_model.IntVar:
         key = (thema, j, slot)
         if key not in self._belegt:
-            deckend = [self._start[thema, j, s] for s, n in self._bloecke[thema].items() if s <= slot < s + n]
+            deckend = [
+                self._start[thema, j, s] for s, n in self._bloecke[thema, j].items() if s <= slot < s + n
+            ]
             b = self.cp.NewBoolVar(f"belegt_{thema}_{j}_{slot}")
             self.cp.Add(b == sum(deckend))
             self._belegt[key] = b
@@ -111,11 +120,19 @@ class _CpSatKontext:
             self._praesenz[key] = p
         return self._praesenz[key]
 
+    def anzahl_slots(self, thema: str, j: int, start: int) -> int:
+        return self._bloecke[thema, j][start]
+
     def startterme(self, thema: str, j: int) -> list[tuple[int, Var]]:
-        return [(s, self._start[thema, j, s]) for s in self._bloecke[thema]]
+        return [(s, self._start[thema, j, s]) for s in self._bloecke[thema, j]]
 
     def bedingung(
-        self, terme: list[Term], untergrenze: int | None, obergrenze: int | None, text: str
+        self,
+        terme: list[Term],
+        untergrenze: int | None,
+        obergrenze: int | None,
+        text: str,
+        faktor: float = 1.0,
     ) -> None:
         ausdruck = sum(k * v for k, v in terme)
         if self._typ == "hart":
@@ -128,7 +145,7 @@ class _CpSatKontext:
             v = self.cp.NewBoolVar("")
             for c in self._grenzen(ausdruck, untergrenze, obergrenze):
                 c.OnlyEnforceIf(v.Not())
-            self._ziel.append(round(self._gewicht * GEWICHT_SKALA) * v)
+            self._ziel.append(round(self._gewicht * faktor * GEWICHT_SKALA) * v)
             self.verletzungen.append(_Verletzung(self._regel, text, v))
 
     def _grenzen(self, ausdruck, lo, hi):
@@ -262,7 +279,7 @@ class CpSatPlaner:
                     for p in modell.personen_zu(t.name)
                     if solver.BooleanValue(ctx.teilnahme(p.name, t.name, j))
                 )
-                termine.append(Termin(t.name, start, modell.bloecke(t.name)[start], teilnehmer))
+                termine.append(Termin(t.name, start, ctx.anzahl_slots(t.name, j, start), teilnehmer))
         termine.sort(key=lambda x: (x.start_slot, x.thema))
         verstoesse = [Verstoss(v.regel, v.text) for v in ctx.verletzungen if solver.BooleanValue(v.var)]
         plan = Plan(status, termine, verstoesse, seed=optionen.seed)

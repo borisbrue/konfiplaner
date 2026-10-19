@@ -1,0 +1,158 @@
+{
+  "spec_id": "SPEC-0008",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0008-R001",
+      "type": "conflict",
+      "severity": "high",
+      "new_contract": "FR-03",
+      "conflicting_contract": "SPEC-0001:FR-02",
+      "detail": "SPEC-0001 importiert Zeitslots und Verfügbarkeiten aus eigenen Blättern, während SPEC-0008 das Blatt `Zeitslots` entfallen lässt und die Zeiten aus dem Blatt `Konferenzen` ableitet.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusste Erweiterung, in den Specs nachgezogen: Festtermine ersetzen Zeitslots/Zeitraster nur bei vorhandenem Blatt Konferenzen (SPEC-0001 FR-12, SPEC-0002 FR-13, SPEC-0005 FR-12); Vorsitz bleibt hart, Kollision ergibt kein_plan mit Begründung (SPEC-0008 FR-09); Rangfaktor über SPEC-0003 FR-08.",
+        "resolved_at": "2026-10-19T19:50:55Z"
+      }
+    },
+    {
+      "id": "CF-0008-R002",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0001:FR-01",
+      "detail": "Beide Specs definieren einen Excel-Import mit Blatt-, Zeilen- und Spaltenfehlern sowie Themenattributen (Wichtigkeit, Mindestanzahl), sodass das neue Blatt `Konferenzen` die Themen-Importlogik teilweise doppelt umsetzt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusste Erweiterung, in den Specs nachgezogen: Festtermine ersetzen Zeitslots/Zeitraster nur bei vorhandenem Blatt Konferenzen (SPEC-0001 FR-12, SPEC-0002 FR-13, SPEC-0005 FR-12); Vorsitz bleibt hart, Kollision ergibt kein_plan mit Begründung (SPEC-0008 FR-09); Rangfaktor über SPEC-0003 FR-08.",
+        "resolved_at": "2026-10-19T19:50:56Z"
+      }
+    },
+    {
+      "id": "CF-0008-R003",
+      "type": "conflict",
+      "severity": "high",
+      "new_contract": "FR-02",
+      "conflicting_contract": "SPEC-0002:FR-01",
+      "detail": "Im Domänenmodell von SPEC-0002 hat ein Thema eine feste Dauer und der Solver wählt dafür einen Zeitslot, während SPEC-0008 die Dauer aus dem Festtermin-Fenster ableitet und den Solver nichts verschieben lässt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusste Erweiterung, in den Specs nachgezogen: Festtermine ersetzen Zeitslots/Zeitraster nur bei vorhandenem Blatt Konferenzen (SPEC-0001 FR-12, SPEC-0002 FR-13, SPEC-0005 FR-12); Vorsitz bleibt hart, Kollision ergibt kein_plan mit Begründung (SPEC-0008 FR-09); Rangfaktor über SPEC-0003 FR-08.",
+        "resolved_at": "2026-10-19T19:50:56Z"
+      }
+    },
+    {
+      "id": "CF-0008-R004",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-03",
+      "conflicting_contract": "SPEC-0002:FR-02",
+      "detail": "SPEC-0002 modelliert Zeitslots und Überschneidungen im Solver, und SPEC-0008 führt mit dem lückenlosen Abschnittsraster ein zweites Zeitmodell für dieselbe Überlappungserkennung ein.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusste Erweiterung, in den Specs nachgezogen: Festtermine ersetzen Zeitslots/Zeitraster nur bei vorhandenem Blatt Konferenzen (SPEC-0001 FR-12, SPEC-0002 FR-13, SPEC-0005 FR-12); Vorsitz bleibt hart, Kollision ergibt kein_plan mit Begründung (SPEC-0008 FR-09); Rangfaktor über SPEC-0003 FR-08.",
+        "resolved_at": "2026-10-19T19:50:56Z"
+      }
+    },
+    {
+      "id": "CF-0008-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0002:FR-03",
+      "detail": "Der Solver aus SPEC-0002 optimiert bereits Wichtigkeit und Mindestanzahl der Themen, und die Rangfolge der Konferenzen einer Person (FK I vor II vor III) bei Kollisionen ist eine zusätzliche Zielgewichtung desselben Optimierungsproblems.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusste Erweiterung, in den Specs nachgezogen: Festtermine ersetzen Zeitslots/Zeitraster nur bei vorhandenem Blatt Konferenzen (SPEC-0001 FR-12, SPEC-0002 FR-13, SPEC-0005 FR-12); Vorsitz bleibt hart, Kollision ergibt kein_plan mit Begründung (SPEC-0008 FR-09); Rangfaktor über SPEC-0003 FR-08.",
+        "resolved_at": "2026-10-19T19:50:57Z"
+      }
+    },
+    {
+      "id": "CF-0008-R006",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0003:FR-01",
+      "detail": "Die Kollisions- und Rangfolgeregel von SPEC-0008 ist eine neue Planungsregel und muss als Plugin über die Registry aus SPEC-0003 umgesetzt werden, nicht fest im Solver.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusste Erweiterung, in den Specs nachgezogen: Festtermine ersetzen Zeitslots/Zeitraster nur bei vorhandenem Blatt Konferenzen (SPEC-0001 FR-12, SPEC-0002 FR-13, SPEC-0005 FR-12); Vorsitz bleibt hart, Kollision ergibt kein_plan mit Begründung (SPEC-0008 FR-09); Rangfaktor über SPEC-0003 FR-08.",
+        "resolved_at": "2026-10-19T19:50:57Z"
+      }
+    },
+    {
+      "id": "CF-0008-R007",
+      "type": "conflict",
+      "severity": "high",
+      "new_contract": "FR-03",
+      "conflicting_contract": "SPEC-0005:FR-02",
+      "detail": "SPEC-0005 stellt Zeitslot-Eingabe über die GUI bereit, und SPEC-0008 streicht das Zeitraster-Formular, sodass die GUI-Spec angepasst werden muss.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusste Erweiterung, in den Specs nachgezogen: Festtermine ersetzen Zeitslots/Zeitraster nur bei vorhandenem Blatt Konferenzen (SPEC-0001 FR-12, SPEC-0002 FR-13, SPEC-0005 FR-12); Vorsitz bleibt hart, Kollision ergibt kein_plan mit Begründung (SPEC-0008 FR-09); Rangfaktor über SPEC-0003 FR-08.",
+        "resolved_at": "2026-10-19T19:50:57Z"
+      }
+    },
+    {
+      "id": "CF-0008-R008",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0006:FR-01",
+      "detail": "Der Vorsitz muss laut SPEC-0006 hart in allen Terminen seines Themas sein, während SPEC-0008 bei Überlappungen die Teilnahme anhand der Rangfolge entziehen kann, sodass beide Regeln bei einem Vorsitz mit zwei gleichzeitigen Konferenzen kollidieren.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusste Erweiterung, in den Specs nachgezogen: Festtermine ersetzen Zeitslots/Zeitraster nur bei vorhandenem Blatt Konferenzen (SPEC-0001 FR-12, SPEC-0002 FR-13, SPEC-0005 FR-12); Vorsitz bleibt hart, Kollision ergibt kein_plan mit Begründung (SPEC-0008 FR-09); Rangfaktor über SPEC-0003 FR-08.",
+        "resolved_at": "2026-10-19T19:50:58Z"
+      }
+    },
+    {
+      "id": "CF-0008-R009",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0007:FR-02",
+      "detail": "SPEC-0008 übernimmt die Normalisierung der Konferenznamen samt Status `sicher` aus SPEC-0007 für das Blatt `Konferenzen`, was eine Abhängigkeit ist und keine eigene Neuimplementierung sein darf.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusste Erweiterung, in den Specs nachgezogen: Festtermine ersetzen Zeitslots/Zeitraster nur bei vorhandenem Blatt Konferenzen (SPEC-0001 FR-12, SPEC-0002 FR-13, SPEC-0005 FR-12); Vorsitz bleibt hart, Kollision ergibt kein_plan mit Begründung (SPEC-0008 FR-09); Rangfaktor über SPEC-0003 FR-08.",
+        "resolved_at": "2026-10-19T19:50:58Z"
+      }
+    },
+    {
+      "id": "CF-0008-R010",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0004:FR-01",
+      "detail": "Die in SPEC-0008 geforderte Sichtbarkeit aller Kollisionen und entgangenen Teilnahmen betrifft den Export aus SPEC-0004, wo Verstöße bisher nicht als eigene Ausgabe vorgesehen sind.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusste Erweiterung, in den Specs nachgezogen: Festtermine ersetzen Zeitslots/Zeitraster nur bei vorhandenem Blatt Konferenzen (SPEC-0001 FR-12, SPEC-0002 FR-13, SPEC-0005 FR-12); Vorsitz bleibt hart, Kollision ergibt kein_plan mit Begründung (SPEC-0008 FR-09); Rangfaktor über SPEC-0003 FR-08.",
+        "resolved_at": "2026-10-19T19:50:58Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-10-19T19:51:21Z"
+}

@@ -51,3 +51,14 @@ def lehrerliste(zeilen: list[list] | None = None, zeitslots: bool = True) -> dic
     if zeitslots:
         blaetter["Zeitslots"] = SLOTS
     return blaetter
+
+
+def konferenzen_blatt(*termine: tuple, kopf: list[str] | None = None) -> list[list]:
+    """Blatt `Konferenzen`: je Termin (Konferenz, Tag, Start, Ende[, Hauptkonferenz, Wichtigkeit, Mindestanzahl])."""
+    return [kopf or ["Konferenz", "Tag", "Start", "Ende"], *[list(t) for t in termine]]
+
+
+def lehrer_mit_terminen(zeilen: list[list], *termine: tuple, **kw) -> dict[str, list[list]]:
+    blaetter = lehrerliste(zeilen, zeitslots=False)
+    blaetter["Konferenzen"] = konferenzen_blatt(*termine, **kw)
+    return blaetter
