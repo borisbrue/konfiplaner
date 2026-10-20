@@ -1,0 +1,38 @@
+{
+  "spec_id": "SPEC-0015",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0015-R001",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0011:Seitenleiste (Primärziel)",
+      "detail": "FR-01 (Versionsanzeige unten in der Seitenleiste) und FR-04 (Update-Karte unten in der Seitenleiste) ergänzen die in SPEC-0011 definierte Ablauf-Seitenleiste und müssen deren Design-Tokens, Kontrastvorgaben (WCAG AA) und Tastaturbedienbarkeit einhalten.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "In SPEC-0015 FR-01/FR-02 ausdrücklich festgelegt (Design nach SPEC-0011, Thread-Muster wie SPEC-0005)",
+        "resolved_at": "2026-10-20T11:28:21Z"
+      }
+    },
+    {
+      "id": "CF-0015-R002",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-05",
+      "conflicting_contract": "SPEC-0005:Desktop-GUI (Menü und Hintergrund-Thread)",
+      "detail": "Der neue Menüpunkt „Datei → Nach Updates suchen…“ (FR-05) und der nicht blockierende Hintergrund-Check (FR-02) erweitern die GUI aus SPEC-0005, die bereits Menü und Hintergrund-Thread-Muster für den Solver definiert, und sollten dasselbe Muster wiederverwenden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "In SPEC-0015 FR-01/FR-02 ausdrücklich festgelegt (Design nach SPEC-0011, Thread-Muster wie SPEC-0005)",
+        "resolved_at": "2026-10-20T11:28:21Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-10-20T11:28:42Z"
+}
