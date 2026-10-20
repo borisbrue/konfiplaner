@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 
-from PySide6.QtCore import QMimeData, QModelIndex, QPersistentModelIndex, QRectF, QSize, Qt, Signal
+from PySide6.QtCore import QMimeData, QModelIndex, QPersistentModelIndex, QRectF, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QAction,
     QColor,
@@ -148,7 +148,8 @@ class SpaltenListe(QListWidget):
             ausstehend, SpaltenListe._ausstehend = SpaltenListe._ausstehend, None
         if ausstehend is not None:
             ziel, person, von, nach = ausstehend
-            ziel.abgelegt.emit(person, von, nach)
+            # erst wenn das laufende Mausereignis ganz abgearbeitet ist
+            QTimer.singleShot(0, lambda: ziel.abgelegt.emit(person, von, nach))
 
     def mimeTypes(self) -> list[str]:
         return [MIME]
@@ -233,19 +234,14 @@ class SpaltenFeld(QFrame):
             punkt.setPixmap(fachpunkt(spalte.konferenz, 7).pixmap(14, 14))
             kopf.addWidget(punkt)
         kopf.addWidget(titel, 1)
-        if spalte.konferenz is None:
-            zeile = f"{spalte.teilnehmer} Lehrkräfte"
-        else:
-            zeile = f"{spalte.teilnehmer} Teilnehmende, mindestens {spalte.mindestanzahl}, Ziel {spalte.ziel}"
-        self.zahlen = QLabel(zeile)
+        self.zahlen = QLabel("")
         self.zahlen.setObjectName("hinweis")
         self.zahlen.setWordWrap(True)
-        self.warnung = QLabel("unter Mindestanzahl" if spalte.unterbesetzt and spalte.konferenz else "")
+        self.warnung = QLabel("")
         self.warnung.setProperty("klein", True)
-        if not self.warnung.text():
-            self.warnung.setVisible(
-                False
-            )  # nie True vor dem Einhängen: ein Label ohne Eltern wäre ein eigenes Fenster
+        self.warnung.setVisible(
+            False
+        )  # nie True vor dem Einhängen: ein Label ohne Eltern wäre ein eigenes Fenster
         self.ausnahme = QLabel("Ausnahme: nicht im Set dieser Lehrkraft")
         self.ausnahme.setObjectName("ausnahmehinweis")
         self.ausnahme.setWordWrap(True)
@@ -258,6 +254,22 @@ class SpaltenFeld(QFrame):
         wurzel.addWidget(self.warnung)
         wurzel.addWidget(self.ausnahme)
         wurzel.addWidget(self.liste, 1)
+        self.liste.ziehen_ueber.connect(self._ziel_anzeigen)
+        self.setze(spalte)
+
+    def setze(self, spalte: SpaltenAnsicht) -> None:
+        """Zeigt den neuen Stand in denselben Widgets, damit beim Verschieben nichts zerstört wird."""
+        self.spalte = spalte
+        if spalte.konferenz is None:
+            zeile = f"{spalte.teilnehmer} Lehrkräfte"
+        else:
+            zeile = f"{spalte.teilnehmer} Teilnehmende, mindestens {spalte.mindestanzahl}, Ziel {spalte.ziel}"
+        self.zahlen.setText(zeile)
+        warnung = "unter Mindestanzahl" if spalte.unterbesetzt and spalte.konferenz else ""
+        self.warnung.setText(warnung)
+        self.warnung.setVisible(bool(warnung))
+        self._ziel_anzeigen(None)
+        self.liste.clear()
         for karte in spalte.karten:
             item = QListWidgetItem()
             item.setData(Qt.ItemDataRole.UserRole, karte)
@@ -266,7 +278,6 @@ class SpaltenFeld(QFrame):
             fl = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
             item.setFlags(fl if karte.vorsitz else fl | Qt.ItemFlag.ItemIsDragEnabled)
             self.liste.addItem(item)
-        self.liste.ziehen_ueber.connect(self._ziel_anzeigen)
 
     @staticmethod
     def _tooltip(karte: KartenAnsicht) -> str:
@@ -330,6 +341,11 @@ class Brett(QWidget):
     # ── Anzeige ──────────────────────────────────────────────────────────────
     def aktualisieren(self) -> None:
         spalten = self.sitzung.verteilung()
+        if self.felder and [f.spalte.konferenz for f in self.felder] == [sp.konferenz for sp in spalten]:
+            for feld, sp in zip(self.felder, spalten, strict=True):
+                feld.setze(sp)  # gleiche Spalten: Widgets bleiben stehen (Absturz unter macOS)
+            self._zusammenfassen(spalten)
+            return
         for feld in self.felder:
             self.spaltenlayout.removeWidget(feld)
             feld.deleteLater()
@@ -344,6 +360,9 @@ class Brett(QWidget):
             feld.show()  # Qt zeigt nachträglich eingehängte Widgets sonst erst verzögert
             self.felder.append(feld)
         self.spaltenlayout.addStretch(1)
+        self._zusammenfassen(spalten)
+
+    def _zusammenfassen(self, spalten: list[SpaltenAnsicht]) -> None:
         vorhanden = bool(spalten)
         self.rolle.setVisible(vorhanden)
         self.leer.setVisible(not vorhanden)
