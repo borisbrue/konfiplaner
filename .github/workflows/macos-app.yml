@@ -27,7 +27,7 @@ jobs:
         run: |
           uv run --with pyinstaller pyinstaller --noconfirm --windowed --name KonfiPlaner \
             --osx-bundle-identifier de.borisbrue.konfiplaner \
-            --collect-data konfiplaner --collect-all ortools \
+            --collect-data konfiplaner --collect-data docx --collect-all ortools \
             packaging/start.py
           codesign --force --deep --sign - dist/KonfiPlaner.app
           ditto -c -k --keepParent dist/KonfiPlaner.app KonfiPlaner-macos-${{ matrix.arch }}.zip

@@ -38,6 +38,12 @@ class FakeDialoge:
     def export_ziel(self, start):
         return self.ziel
 
+    def einladung_ziel(self, start):
+        return self.ziel
+
+    def logo_oeffnen(self, start):
+        return getattr(self, "logo", None)
+
     def ja_nein(self, titel, text):
         self.fragen.append(text)
         return self.antwort

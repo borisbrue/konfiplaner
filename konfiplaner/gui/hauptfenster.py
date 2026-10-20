@@ -14,6 +14,7 @@ from konfiplaner.excel_import import ImportDateiFehler
 from konfiplaner.gui.daten import DatenSeite
 from konfiplaner.gui.design import registriere_fachfarben
 from konfiplaner.gui.dialoge import Dialoge
+from konfiplaner.gui.einladung import EinladungSeite
 from konfiplaner.gui.ergebnis import ErgebnisSeite
 from konfiplaner.gui.konferenzen import KonferenzenSeite
 from konfiplaner.gui.lehrkraefte import LehrkraefteSeite
@@ -29,7 +30,8 @@ from konfiplaner.modell import Plan
     SEITE_REGELN,
     SEITE_PLANEN,
     SEITE_ERGEBNIS,
-) = range(6)
+    SEITE_EINLADUNG,
+) = range(7)
 
 
 PRUEFSCHRITTE = (SEITE_KONFERENZEN, SEITE_LEHRKRAEFTE, SEITE_REGELN)
@@ -49,6 +51,7 @@ SCHRITTE = (
     ("Regeln", "Planungsregeln", "Legt fest, was gelten muss und was nur gelten soll."),
     ("Planen", "Plan berechnen", "Berechnet, wer an welcher Konferenz teilnimmt."),
     ("Ergebnis", "Ergebnis prüfen", "Plan nach Termin, Person und Thema ansehen und als Excel exportieren."),
+    ("Einladung", "Einladung erstellen", "Ablauf des Tages bearbeiten und als Word-Datei exportieren."),
 )
 
 
@@ -77,11 +80,20 @@ class Hauptfenster(QMainWindow):
         self.konferenzen = KonferenzenSeite(sitzung)
         self.lehrkraefte = LehrkraefteSeite(sitzung)
         self.regeln = RegelnSeite(sitzung, self.dialoge)
+        self.einladung = EinladungSeite(sitzung, self.dialoge)
         self.planen = PlanenSeite(sitzung)
         self.ergebnis = ErgebnisSeite(sitzung)
         self.reiter = Seitenstapel()
         for seite, (kurz, _titel, _hilfe) in zip(
-            (self.daten, self.konferenzen, self.lehrkraefte, self.regeln, self.planen, self.ergebnis),
+            (
+                self.daten,
+                self.konferenzen,
+                self.lehrkraefte,
+                self.regeln,
+                self.planen,
+                self.ergebnis,
+                self.einladung,
+            ),
             SCHRITTE,
             strict=True,
         ):
@@ -122,7 +134,14 @@ class Hauptfenster(QMainWindow):
         self.daten.oeffnen.clicked.connect(self.datei_oeffnen)
         self.daten.neu_laden.clicked.connect(self.neu_laden)
         self.daten.daten_geaendert.connect(self._daten_geaendert)
-        for seite in (self.daten, self.konferenzen, self.lehrkraefte, self.regeln, self.planen):
+        for seite in (
+            self.daten,
+            self.konferenzen,
+            self.lehrkraefte,
+            self.regeln,
+            self.planen,
+            self.einladung,
+        ):
             seite.hinweis.connect(self._hinweis)
         self.konferenzen.auswahl_geaendert.connect(self._auswahl_geaendert)
         self.regeln.profil_geaendert.connect(self._auswahl_geaendert)
@@ -160,6 +179,7 @@ class Hauptfenster(QMainWindow):
         self.reiter.setTabEnabled(SEITE_REGELN, geladen and not laeuft)
         self.reiter.setTabEnabled(SEITE_PLANEN, geladen)
         self.reiter.setTabEnabled(SEITE_ERGEBNIS, self.sitzung.plan is not None)
+        self.reiter.setTabEnabled(SEITE_EINLADUNG, geladen and not laeuft)
         self.reiter.setTabEnabled(SEITE_DATEN, not laeuft)
         self.aktion_export.setEnabled(self.sitzung.plan is not None and not laeuft)
         self.aktion_oeffnen.setEnabled(not laeuft)
@@ -186,6 +206,7 @@ class Hauptfenster(QMainWindow):
                 "Zuerst Datei laden",
                 "Zuerst Datei laden",
                 "Noch kein Plan",
+                "Zuerst Datei laden",
             ]
         konferenzen = s.konferenzen()
         ansicht = s.lehrkraefte()
@@ -218,6 +239,7 @@ class Hauptfenster(QMainWindow):
             f"{hart} hart, {weich} weich",
             planen,
             ergebnis,
+            s.tagesplan.datum_text or "Kein Datum",
         ]
 
     def _seite_gewechselt(self, i: int) -> None:

@@ -64,9 +64,9 @@ Die Oberfläche (SPEC-0005 ff.) ist funktional, sieht aber aus wie ein Standard-
 - **FR-02 (Kontrast):** Text, gedämpfter Text, Akzent-Schaltflächen und Statusfarben erreichen auf ihren Flächen mindestens 4,5:1; Fachfarben als grafische Objekte mindestens 3:1.
 - **FR-03 (Schrift):** Atkinson Hyperlegible Next (SIL OFL) ist gebündelt und wird beim Start geladen; fehlt sie, gilt die Systemschrift. Alle Größen stammen aus einer Skala.
 - **FR-04 (Fachfarben):** Jede Konferenz hat eine stabile Farbe aus einer festen Palette von 36 Tönen (12 Farbtöne in drei Reihen, ohne das Gelb des Akzents). Die Farben werden den normalisierten Namen (SPEC-0007, so wie sie im Modell stehen) einer Datei nach Namen sortiert zugewiesen: dieselbe Datei ergibt immer dieselben Farben, es gibt bis 36 Konferenzen keine Doppelten, und eine Auswahl ändert nichts. Namen außerhalb der Datei bekommen eine stabile Farbe aus dem Namen. Zu dunkle Töne werden aufgehellt, bis sie als grafisches Objekt mindestens 3,2:1 erreichen. Sie erscheint als Punkt vor dem Namen in den Ansichten Konferenzen, Lehrkräfte, Ergebnis und Themen. Der Name steht immer daneben; Farbe ist nie der einzige Informationsträger.
-- **FR-05 (Seitenleiste):** Die Schritte Daten, Konferenzen, Lehrkräfte, Regeln, Planen und Ergebnis stehen in einer Seitenleiste mit Nummer, Name und Kurzstatus (z. B. „101 Personen", „17 von 26 ausgewählt", „2 neu zu verplanen", „optimal"). Zustände: aktuell, abgeschlossen, gesperrt. Sie ersetzt die Tab-Leiste, die Seiten und Zustände bleiben dieselben.
+- **FR-05 (Seitenleiste):** Die Schritte Daten, Konferenzen, Lehrkräfte, Regeln, Planen, Ergebnis und (ab SPEC-0014) Einladung stehen in einer Seitenleiste mit Nummer, Name und Kurzstatus (z. B. „101 Personen", „17 von 26 ausgewählt", „2 neu zu verplanen", „optimal"). Zustände: aktuell, abgeschlossen, gesperrt. Sie ersetzt die Tab-Leiste, die Seiten und Zustände bleiben dieselben.
 - **FR-06 (Seitenkopf):** Jede Seite hat einen Titel und einen erklärenden Satz in Alltagssprache.
-- **FR-07 (Fokus und Tastatur):** Jedes bedienbare Element zeigt einen sichtbaren Fokusring; die Seitenleiste ist mit Pfeiltasten und Strg+1 bis Strg+6 bedienbar.
+- **FR-07 (Fokus und Tastatur):** Jedes bedienbare Element zeigt einen sichtbaren Fokusring; die Seitenleiste ist mit Pfeiltasten und Strg+1 bis Strg+7 bedienbar.
 - **FR-08 (Primäre Aktion):** Je Seite ist die Hauptaktion in der Akzentfarbe hervorgehoben (Datei öffnen, Planen, Exportieren); alle anderen Schaltflächen sind neutral.
 - **FR-09 (Leere Zustände):** Fehlt Inhalt, nennt die Seite den nächsten Schritt (z. B. „Noch keine Datei. Excel-Datei öffnen oder hier ablegen.").
 - **FR-10 (Ablegen):** Eine `.xlsx`-Datei, die auf das Fenster gezogen wird, wird geladen.
@@ -121,3 +121,4 @@ Feature: Design
 |------------|---------|--------------|---------------------|
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
 | 2026-10-19 | 0.2.0   | Boris Brünen | Umsetzung: Fachfarben-Zuweisung (36 Töne, Aufhellung), Aktionen nach Zweck gruppiert |
+| 2026-10-20 | +      | Boris Brünen | Nachtrag zu SPEC-0014: siebter Schritt „Einladung“, Version unverändert |

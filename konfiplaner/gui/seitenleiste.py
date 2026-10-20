@@ -32,7 +32,7 @@ class SchrittKnopf(QAbstractButton):
         self.update()
 
     def sizeHint(self) -> QSize:
-        return QSize(236, 62)
+        return QSize(236, 54)
 
     def paintEvent(self, _event) -> None:
         t, p = self.t, QPainter(self)

@@ -1,0 +1,53 @@
+{
+  "spec_id": "SPEC-0014",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0014-R001",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0009:FR-01",
+      "detail": "FR-04 übernimmt die Auswahl der Konferenzen aus SPEC-0009 in den Tagesplan, hat aber keine eigene Auswahlquelle. Die Abhängigkeit sollte ausdrücklich genannt werden, damit abgewählte Konferenzen nur in SPEC-0009 verwaltet werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "In SPEC-0014 ausdrücklich festgelegt (Quelle SPEC-0009, gleiche Einstellungsdatei, gleiche Namensquelle)",
+        "resolved_at": "2026-10-20T09:28:08Z"
+      }
+    },
+    {
+      "id": "CF-0014-R002",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-03",
+      "conflicting_contract": "SPEC-0004:FR-01",
+      "detail": "SPEC-0004 und SPEC-0014 exportieren beide Konferenz- und Zeitinformationen aus demselben Plan, in zwei Formaten (Excel und Word). Die Konferenznamen und Zeitformate (FR-03 mit Punkt als Trenner) sollten sich nicht unabhängig voneinander entwickeln.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "In SPEC-0014 ausdrücklich festgelegt (Quelle SPEC-0009, gleiche Einstellungsdatei, gleiche Namensquelle)",
+        "resolved_at": "2026-10-20T09:28:08Z"
+      }
+    },
+    {
+      "id": "CF-0014-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0010:FR-01",
+      "detail": "SPEC-0010 hat bereits Persistenz von Änderungen über Sitzungen hinweg (Neuladen der Datei). Der Tagesplan braucht einen eigenen Speichermechanismus, der in SPEC-0014 noch festgelegt werden muss, damit es keine zwei parallelen Ablagen gibt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "In SPEC-0014 ausdrücklich festgelegt (Quelle SPEC-0009, gleiche Einstellungsdatei, gleiche Namensquelle)",
+        "resolved_at": "2026-10-20T09:28:08Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-10-20T09:28:38Z"
+}

@@ -54,3 +54,7 @@ Grundregeln, lassen sich je Lauf als hart, weich oder aus konfigurieren (GUI-Rei
 ## macOS-App
 
 Die App wird per GitHub Actions gebaut (Workflow „macOS-App“, Apple Silicon): Actions → macOS-App → Run workflow, danach `KonfiPlaner-macos.zip` aus den Artefakten laden. Die App ist nicht notarisiert; auf einem fremden Mac beim ersten Start Rechtsklick → Öffnen (oder `xattr -dr com.apple.quarantine KonfiPlaner.app`).
+
+## Einladung als Word-Dokument
+
+Im Schritt „Einladung“ lässt sich der Ablauf des Tages (Kopf, Ziele, Zeitblöcke) bearbeiten und als `.docx` exportieren. Ein Block mit „Gewählte Fachkonferenzen automatisch eintragen“ übernimmt die Auswahl aus dem Schritt „Konferenzen“. Ein Logo (PNG/JPG) wählst du pro Rechner; es liegt nicht im Repository.

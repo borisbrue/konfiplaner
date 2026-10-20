@@ -38,6 +38,25 @@ class Dialoge:
             return None
         return Path(pfad if pfad.lower().endswith(".xlsx") else pfad + ".xlsx")
 
+    def einladung_ziel(self, start: Path | None) -> Path | None:
+        vorschlag = str((start or Path.home()) / "Einladung.docx")
+        pfad, _ = QFileDialog.getSaveFileName(
+            self.eltern,
+            "Einladung exportieren",
+            vorschlag,
+            "Word-Dokumente (*.docx)",
+            options=QFileDialog.Option.DontConfirmOverwrite,
+        )
+        if not pfad:
+            return None
+        return Path(pfad if pfad.lower().endswith(".docx") else pfad + ".docx")
+
+    def logo_oeffnen(self, start: Path | None) -> Path | None:
+        pfad, _ = QFileDialog.getOpenFileName(
+            self.eltern, "Logo wählen", str(start or Path.home()), "Bilder (*.png *.jpg *.jpeg)"
+        )
+        return Path(pfad) if pfad else None
+
     def ja_nein(self, titel: str, text: str) -> bool:
         antwort = QMessageBox.question(self.eltern, titel, text)
         return antwort == QMessageBox.StandardButton.Yes

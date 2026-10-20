@@ -15,6 +15,7 @@ from datetime import time
 from pathlib import Path
 from typing import Any
 
+from konfiplaner.einladung import exportiere_einladung
 from konfiplaner.einstellungen import Einstellungsspeicher, KeineEinstellungen
 from konfiplaner.excel_export import exportiere, tabellen
 from konfiplaner.excel_import import Importergebnis, importiere
@@ -30,6 +31,7 @@ from konfiplaner.restriktionen import (
     standard_konfiguration,
 )
 from konfiplaner.solver import CpSatPlaner
+from konfiplaner.tagesplan import Tagesplan
 from konfiplaner.zeitraster import erzeuge_slots
 from konfiplaner.zuordnung import LehrerAenderung, Termin, Zuordnung
 
@@ -182,6 +184,8 @@ class Sitzung:
         self._gespeicherte_zuordnung = Zuordnung()
         self._gesetzt: set[str] = set()  # von Hand gesetzte Regeln (verdrängen das Profil)
         self.profil = "auto"  # auto | verteilen | festtermine | klassisch (SPEC-0012)
+        self.tagesplan = Tagesplan()  # Ablauf des Tages für die Einladung (SPEC-0014)
+        self.logo: Path | None = None
         self._rueckgaengig: list[tuple[Plan, Plan, str, LehrerAenderung | None, frozenset[str]]] = []
         self._themenwerte: dict[str, dict[str, int]] = {}
         self._lade_einstellungen()
@@ -207,6 +211,9 @@ class Sitzung:
         self._gespeicherte_zuordnung = Zuordnung.aus_dict(daten.get("zuordnung"))
         if daten.get("profil") in ("auto", *PROFILE):
             self.profil = daten["profil"]
+        self.tagesplan = Tagesplan.aus_dict(daten.get("tagesplan"))
+        if isinstance(daten.get("logo"), str):
+            self.logo = Path(daten["logo"])
         ab = daten.get("abgewaehlte_konferenzen")
         if isinstance(ab, list):
             self.abgewaehlt = {str(n) for n in ab}
@@ -243,6 +250,8 @@ class Sitzung:
                 "normalisierung": self.normalisierung.bestaetigt(),
                 "abgewaehlte_konferenzen": sorted(self.abgewaehlt),
                 "profil": self.profil,
+                "tagesplan": self.tagesplan.als_dict(),
+                "logo": str(self.logo) if self.logo else None,
                 "zuordnung": self.zuordnung.als_dict()
                 if self.datei
                 else self._gespeicherte_zuordnung.als_dict(),
@@ -972,6 +981,23 @@ class Sitzung:
         if self.plan is None or self.plan_modell is None:
             raise ModellFehler("Kein Plan vorhanden")
         exportiere(self.plan, self.plan_modell, ziel, ueberschreiben)
+        self.letzter_exportordner = Path(ziel).parent
+        self.speichere()
+
+    # ── Tagesplan und Einladung (SPEC-0014) ─────────────────────────────────
+    def setze_tagesplan(self, plan: Tagesplan) -> None:
+        self.tagesplan = plan
+        self.speichere()
+
+    def setze_logo(self, pfad: Path | None) -> None:
+        self.logo = pfad
+        self.speichere()
+
+    def ausgewaehlte_konferenzen(self) -> list[str]:
+        return [k.name for k in self.konferenzen() if k.ausgewaehlt]
+
+    def exportiere_einladung(self, ziel: str | Path, ueberschreiben: bool = False) -> None:
+        exportiere_einladung(self.tagesplan, self.ausgewaehlte_konferenzen(), ziel, ueberschreiben, self.logo)
         self.letzter_exportordner = Path(ziel).parent
         self.speichere()
 

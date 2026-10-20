@@ -65,8 +65,9 @@ def test_seitenleiste_zeigt_alle_schritte_mit_nummer_name_und_kurzstatus(qtbot, 
         "Regeln",
         "Planen",
         "Ergebnis",
+        "Einladung",
     ]
-    assert [s.nummer for s in f.leiste.schritte] == [1, 2, 3, 4, 5, 6]
+    assert [s.nummer for s in f.leiste.schritte] == [1, 2, 3, 4, 5, 6, 7]
     assert schritt(f, 0).status == "6 Lehrkräfte" and schritt(f, 1).status == "3 von 3 ausgewählt"
     assert schritt(f, 2).status == "Unverändert" and schritt(f, 3).status == "6 hart, 3 weich"
     assert schritt(f, 4).status == "Bereit" and schritt(f, 5).status == "Noch kein Plan"
@@ -99,7 +100,7 @@ def test_zustaende_aktuell_fertig_gesperrt(qtbot, tmp_path):
 
 def test_ohne_datei_sind_alle_schritte_ausser_daten_gesperrt(qtbot, tmp_path):
     f = fenster(qtbot, tmp_path, laden=False)
-    assert [s.zustand for s in f.leiste.schritte] == [AKTUELL] + [GESPERRT] * 5
+    assert [s.zustand for s in f.leiste.schritte] == [AKTUELL] + [GESPERRT] * 6
     assert not any(s.isEnabled() for s in f.leiste.schritte[1:])
     assert schritt(f, 1).status == "Zuerst Datei laden" and schritt(f, 0).status == "Noch keine Datei"
     f.leiste.gewaehlt.emit(SEITE_PLANEN)
@@ -124,7 +125,7 @@ def test_jede_seite_hat_titel_und_erklaerenden_satz(qtbot, tmp_path):
         f.reiter.setCurrentIndex(i)
         assert f.seitentitel.text() == titel and f.seitenhilfe.text() == hilfe and len(hilfe) > 30
         gesehen.add(titel)
-    assert len(gesehen) == 6
+    assert len(gesehen) == 7
 
 
 def kuerzel(f):

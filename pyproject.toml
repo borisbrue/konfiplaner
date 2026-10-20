@@ -3,7 +3,14 @@ name = "konfiplaner"
 version = "0.1.0"
 description = "Personen zu Terminen zusammenstellen"
 requires-python = ">=3.11"
-dependencies = ["ortools", "openpyxl", "PySide6", "pyyaml", "jsonschema"]
+dependencies = [
+    "ortools",
+    "openpyxl",
+    "PySide6",
+    "pyyaml",
+    "jsonschema",
+    "python-docx>=1.2.0",
+]
 
 [project.scripts]
 konfiplaner = "konfiplaner.gui.app:main"
