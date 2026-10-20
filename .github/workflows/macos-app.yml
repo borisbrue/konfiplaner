@@ -7,7 +7,15 @@ on:
 
 jobs:
   app:
-    runs-on: macos-14   # Apple Silicon (arm64)
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-14        # Apple Silicon
+            arch: arm64
+          - runner: macos-15-intel  # Intel
+            arch: intel
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -22,8 +30,8 @@ jobs:
             --collect-data konfiplaner --collect-all ortools \
             packaging/start.py
           codesign --force --deep --sign - dist/KonfiPlaner.app
-          ditto -c -k --keepParent dist/KonfiPlaner.app KonfiPlaner-macos.zip
+          ditto -c -k --keepParent dist/KonfiPlaner.app KonfiPlaner-macos-${{ matrix.arch }}.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: KonfiPlaner-macos
-          path: KonfiPlaner-macos.zip
+          name: KonfiPlaner-macos-${{ matrix.arch }}
+          path: KonfiPlaner-macos-${{ matrix.arch }}.zip
