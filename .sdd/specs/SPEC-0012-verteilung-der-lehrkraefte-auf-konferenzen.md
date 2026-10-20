@@ -66,7 +66,7 @@ Mit den echten Daten ließ sich nicht planen: Die Regel `schwerpunkte` verlangt,
 - **FR-06 (Ein Treffen je Konferenz):** `PlanerOptionen.max_termine_je_thema` begrenzt die Zahl der Termine je Konferenz ohne Festtermine (Standard 3). Für Lehrerlisten setzt die Sitzung 1: eine Konferenz ist ein Treffen.
 - **FR-07 (Überschneidung):** Die Regel `keine_ueberschneidung` bleibt hart. Liegen alle Konferenzen im selben Slot, besucht jede Lehrkraft genau eine; liegen sie getrennt, so viele wie die Rangfolge nahelegt.
 - **FR-08 (Hinweis bei Unlösbarkeit):** Gibt es keinen Plan und ist `schwerpunkte` hart, nennt die Oberfläche zusätzlich einen Tipp: Die Regel verlangt, dass jede Lehrkraft alle ihre Konferenzen besucht; auf „weich" oder „aus" stellen oder das Profil „Verteilen" nutzen. Die Begründung nennt die tatsächlichen Konflikte.
-- **FR-09 (Konferenzebene fest):** `Fixierungen.konferenzen` (Person → Konferenzen) verlangt als harte Vorgabe die Teilnahme an mindestens einem Termin der Konferenz; die Diagnose nennt sie als Regel `fixierung`. `Sitzung.setze_zuweisung(person, konferenzen)` setzt sie dauerhaft (gespeichert wie die übrigen Änderungen, SPEC-0010 FR-10).
+- **FR-09 (Konferenzebene fest):** `Fixierungen.konferenzen` (Person → Konferenzen) verlangt als harte Vorgabe die Teilnahme an mindestens einem Termin der Konferenz; die Diagnose nennt sie als Regel `fixierung`. `Sitzung.setze_zuweisung(person, konferenzen)` setzt sie dauerhaft (auch durch manuelles Verschieben auf dem Brett, SPEC-0013 FR-06) (gespeichert wie die übrigen Änderungen, SPEC-0010 FR-10).
 - **FR-11 (Profilwahl):** Auf der Seite „Regeln“ wählt ein Auswahlfeld das Profil: Automatisch (folgt der Datei), Verteilen, Rangfolge bei gleichzeitigen Terminen (SPEC-0008) oder Klassisch (alle Konferenzen besuchen). Die Wahl wird gespeichert, stellt alle nicht von Hand gesetzten Regeln um und verwirft den Plan.
 - **FR-10 (Planungskontext):** `Planungskontext.abweichung(terme, ziel, text, faktor)` fügt der Zielfunktion die absolute Abweichung der Summe vom Ziel hinzu (SPEC-0003 FR-07).
 
@@ -118,3 +118,4 @@ Feature: Verteilung
 | Datum      | Version | Autor        | Änderung            |
 |------------|---------|--------------|---------------------|
 | 2026-10-20 | 0.1.0   | Boris Brünen | Initiale Erstellung |
+| 2026-10-20 | +      | Boris Brünen | Nachtrag zu SPEC-0013 (Brett), Version unverändert |

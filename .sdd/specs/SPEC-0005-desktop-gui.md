@@ -45,7 +45,7 @@ Planer:innen sollen ohne Kommandozeile arbeiten: Excel laden, Regeln wählen, pl
 
 **Nicht-Ziele (explizit):**
 - Kein Mehrbenutzer-/Web-Betrieb.
-- Kein manueller Editor für den berechneten Plan (nur Ansicht; Drag-and-Drop später). Die Eingabezuordnung der Lehrkräfte ist dagegen änderbar (SPEC-0010); der Plan wird danach neu berechnet.
+- Kein freier Editor für den berechneten Plan. Das Verschieben von Lehrkräften zwischen Konferenzen per Drag and Drop ist in SPEC-0013 umgesetzt; Termine und Vorsitz lassen sich dort nicht ziehen. Die Eingabezuordnung der Lehrkräfte ist dagegen änderbar (SPEC-0010); der Plan wird danach neu berechnet.
 
 ## 3. User Stories
 
@@ -132,3 +132,4 @@ Feature: GUI-Ablauf
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0009 (Konferenzauswahl), Version unverändert |
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0010 (Fixierungen, Lehrkräfte), Version unverändert |
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0011: Seitenleiste ersetzt die Tab-Leiste, Version unverändert |
+| 2026-10-20 | +      | Boris Brünen | Nachtrag zu SPEC-0013 (Brett), Version unverändert |

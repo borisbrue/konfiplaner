@@ -1,0 +1,128 @@
+{
+  "spec_id": "SPEC-0013",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0013-R002",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0010:FR-01",
+      "detail": "SPEC-0010 erlaubt schon das manuelle Ändern der Konferenzen, der Rangfolge und der Teilnahme einer Lehrkraft; SPEC-0013 FR-04 löst dasselbe Problem per Drag and Drop (Konferenz ans Ende des Sets, Teilnahme eintragen). Es ist offen, ob ein Zug eine Fixierung im Sinne von SPEC-0010 erzeugt, und welcher Weg bei widersprüchlichen Änderungen gilt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt und nachgezogen: SPEC-0005 nennt Drag and Drop jetzt als SPEC-0013; das Verschieben setzt die feste Zuweisung aus SPEC-0012 FR-09 und ändert nur den Plan, nicht die Regeln; Ausnahmen außerhalb des Sets werden ins Set aufgenommen und gewarnt.",
+        "resolved_at": "2026-10-20T07:50:41Z"
+      }
+    },
+    {
+      "id": "CF-0013-R004",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0012:FR-01",
+      "detail": "Ein Zug außerhalb des Sets (SPEC-0013 FR-04) verletzt die Annahme von SPEC-0012, dass sich Lehrkräfte nur auf Konferenzen ihres Sets verteilen. Das Ergebnis ist ein Plan, den die Regel „verteilung“ bei einer Neuberechnung nicht reproduziert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt und nachgezogen: SPEC-0005 nennt Drag and Drop jetzt als SPEC-0013; das Verschieben setzt die feste Zuweisung aus SPEC-0012 FR-09 und ändert nur den Plan, nicht die Regeln; Ausnahmen außerhalb des Sets werden ins Set aufgenommen und gewarnt.",
+        "resolved_at": "2026-10-20T07:50:41Z"
+      }
+    },
+    {
+      "id": "CF-0013-R005",
+      "type": "redundancy",
+      "severity": "medium",
+      "new_contract": "FR-03",
+      "conflicting_contract": "SPEC-0009:FR-03",
+      "detail": "Die Spalte „Ohne Zuteilung“ (Lehrkräfte ohne Teilnahme oder ohne Konferenz) bildet inhaltlich die Liste „Neu zuordnen“ aus SPEC-0009 nach. Zwei parallele Darstellungen derselben Personengruppe können auseinanderlaufen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt und nachgezogen: SPEC-0005 nennt Drag and Drop jetzt als SPEC-0013; das Verschieben setzt die feste Zuweisung aus SPEC-0012 FR-09 und ändert nur den Plan, nicht die Regeln; Ausnahmen außerhalb des Sets werden ins Set aufgenommen und gewarnt.",
+        "resolved_at": "2026-10-20T07:50:42Z"
+      }
+    },
+    {
+      "id": "CF-0013-R006",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-02",
+      "conflicting_contract": "SPEC-0011:FR-01",
+      "detail": "Fachfarben in Spaltenkopf und Karten gehören zum Farbsystem von SPEC-0011 (jede Konferenz in jeder Ansicht dieselbe Farbe). SPEC-0013 muss diese Token wiederverwenden. Der Akzentrahmen und die Warnfarbe beim Ziehen müssen die Kontrastvorgaben dort erfüllen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt und nachgezogen: SPEC-0005 nennt Drag and Drop jetzt als SPEC-0013; das Verschieben setzt die feste Zuweisung aus SPEC-0012 FR-09 und ändert nur den Plan, nicht die Regeln; Ausnahmen außerhalb des Sets werden ins Set aufgenommen und gewarnt.",
+        "resolved_at": "2026-10-20T07:50:42Z"
+      }
+    },
+    {
+      "id": "CF-0013-R007",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-03",
+      "conflicting_contract": "SPEC-0006:FR-01",
+      "detail": "Der Vorsitz als gesperrte Karte entspricht der harten Regel „vorsitz“ aus SPEC-0006. Die Sperre soll daraus abgeleitet werden und nicht als eigene Logik im Brett entstehen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt und nachgezogen: SPEC-0005 nennt Drag and Drop jetzt als SPEC-0013; das Verschieben setzt die feste Zuweisung aus SPEC-0012 FR-09 und ändert nur den Plan, nicht die Regeln; Ausnahmen außerhalb des Sets werden ins Set aufgenommen und gewarnt.",
+        "resolved_at": "2026-10-20T07:50:42Z"
+      }
+    },
+    {
+      "id": "CF-0013-R008",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-02",
+      "conflicting_contract": "SPEC-0012:FR-01",
+      "detail": "SPEC-0012 sichert Mindestanzahl und Zielgröße per Solver und Regel „ausgleich“; SPEC-0013 zeigt „unter Mindestanzahl“ und Zielgröße im Spaltenkopf an und lässt sie manuell ändern. Die Berechnung der Zielgröße und der Mindestanzahl muss aus SPEC-0012 übernommen werden und darf nicht neu definiert werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt und nachgezogen: SPEC-0005 nennt Drag and Drop jetzt als SPEC-0013; das Verschieben setzt die feste Zuweisung aus SPEC-0012 FR-09 und ändert nur den Plan, nicht die Regeln; Ausnahmen außerhalb des Sets werden ins Set aufgenommen und gewarnt.",
+        "resolved_at": "2026-10-20T07:50:43Z"
+      }
+    },
+    {
+      "id": "CF-0013-R009",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0008:FR-01",
+      "detail": "Überschneidungen und Rangfolge-Konflikte werden in SPEC-0008 vom Solver bewertet und als Verstoß gemeldet; SPEC-0013 zeigt nach jedem Zug Überschneidungen und Hinweise ohne Solver neu an. Die Konfliktprüfung sollte aus SPEC-0008 wiederverwendet werden und nicht doppelt implementiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt und nachgezogen: SPEC-0005 nennt Drag and Drop jetzt als SPEC-0013; das Verschieben setzt die feste Zuweisung aus SPEC-0012 FR-09 und ändert nur den Plan, nicht die Regeln; Ausnahmen außerhalb des Sets werden ins Set aufgenommen und gewarnt.",
+        "resolved_at": "2026-10-20T07:50:43Z"
+      }
+    },
+    {
+      "id": "CF-0013-R010",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0005:Nicht-Ziele",
+      "detail": "SPEC-0005 verweist schon auf SPEC-0013 und nennt dort den Reiter der Ergebnisansicht. FR-01 in SPEC-0013 legt „Verteilung“ als ersten Reiter und Standardreiter fest, was die Reiterreihenfolge der GUI aus SPEC-0005 ändert. Die beiden Specs müssen übereinstimmen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt und nachgezogen: SPEC-0005 nennt Drag and Drop jetzt als SPEC-0013; das Verschieben setzt die feste Zuweisung aus SPEC-0012 FR-09 und ändert nur den Plan, nicht die Regeln; Ausnahmen außerhalb des Sets werden ins Set aufgenommen und gewarnt.",
+        "resolved_at": "2026-10-20T07:50:43Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-10-20T07:51:04Z"
+}

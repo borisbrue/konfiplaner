@@ -5,6 +5,7 @@ Die GUI zeigt `Sitzung` nur an; Fachlogik bleibt in Import, Registry, Planer und
 
 from __future__ import annotations
 
+import copy
 import dataclasses
 import logging
 from collections import Counter
@@ -52,6 +53,9 @@ PROFIL_NAMEN = {
     "festtermine": "Rangfolge bei gleichzeitigen Terminen",
     "klassisch": "Klassisch: alle Konferenzen besuchen",
 }
+PRUEFPRAEFIX = "Prüfung: "
+MANUELL = "Der Plan wurde auf dem Verteilungsbrett von Hand angepasst"
+MAX_RUECKGAENGIG = 50
 TIPP_SCHWERPUNKTE = (
     "Tipp: Die Regel „schwerpunkte“ verlangt, dass jede Lehrkraft alle ihre Konferenzen besucht. "
     "Unter „Regeln“ das Profil „Verteilen“ wählen oder die Regel auf „weich“ stellen."
@@ -88,6 +92,35 @@ class LehrerAnsicht:
 
 
 @dataclass(frozen=True)
+class KartenAnsicht:
+    """Eine Lehrkraft auf dem Verteilungsbrett (SPEC-0013 FR-03)."""
+
+    name: str
+    weitere: tuple[str, ...]  # weitere Konferenzen im Set der Lehrkraft
+    vorsitz: bool  # gesperrt: leitet diese Konferenz
+    hat_konferenz: bool
+
+
+@dataclass(frozen=True)
+class SpaltenAnsicht:
+    """Eine Spalte des Bretts; `konferenz=None` ist „Ohne Zuteilung“."""
+
+    konferenz: str | None
+    karten: tuple[KartenAnsicht, ...]
+    vorsitz: str | None
+    mindestanzahl: int
+    ziel: int
+    teilnehmer: int
+    unterbesetzt: bool
+
+
+@dataclass(frozen=True)
+class VerschiebeFolge:
+    ausnahme: bool
+    hinweise: tuple[str, ...]  # Prüfhinweise nach der Änderung
+
+
+@dataclass(frozen=True)
 class RegelAnsicht:
     """Eine Restriktion für die Regelverwaltung."""
 
@@ -98,6 +131,27 @@ class RegelAnsicht:
     bearbeitbar: bool  # False: braucht Pflichtparameter, nur per Konfigurationsdatei
     parameter_text: str
     beschreibung: str
+
+
+def pruefe_plan(plan: Plan, modell: Modell) -> list[str]:
+    """Prüfhinweise: Mindestanzahl je Termin, Vorsitz in jedem Termin, keine Überschneidung."""
+    hinweise: list[str] = []
+    for t in plan.termine:
+        thema = modell.thema(t.thema)
+        if len(t.teilnehmer) < thema.mindestanzahl:
+            hinweise.append(
+                f"{t.thema} hat {len(t.teilnehmer)} von mindestens {thema.mindestanzahl} Teilnehmenden"
+            )
+        if thema.vorsitz and thema.vorsitz not in t.teilnehmer:
+            hinweise.append(f"Vorsitz {thema.vorsitz} fehlt in {t.thema}")
+    belegt: dict[tuple[str, int], str] = {}
+    for t in plan.termine:
+        for name in t.teilnehmer:
+            for slot in range(t.start_slot, t.start_slot + t.anzahl_slots):
+                andere = belegt.setdefault((name, slot), t.thema)
+                if andere != t.thema:
+                    hinweise.append(f"{name} hat zwei Termine gleichzeitig: {andere} und {t.thema}")
+    return list(dict.fromkeys(hinweise))
 
 
 class Sitzung:
@@ -128,6 +182,7 @@ class Sitzung:
         self._gespeicherte_zuordnung = Zuordnung()
         self._gesetzt: set[str] = set()  # von Hand gesetzte Regeln (verdrängen das Profil)
         self.profil = "auto"  # auto | verteilen | festtermine | klassisch (SPEC-0012)
+        self._rueckgaengig: list[tuple[Plan, Plan, str, LehrerAenderung | None, frozenset[str]]] = []
         self._themenwerte: dict[str, dict[str, int]] = {}
         self._lade_einstellungen()
 
@@ -478,6 +533,145 @@ class Sitzung:
         ):
             return TIPP_SCHWERPUNKTE
         return None
+
+    # ── Verteilungsbrett (SPEC-0013) ────────────────────────────────────────
+    def verteilung(self) -> list[SpaltenAnsicht]:
+        """Spalten des Bretts: „Ohne Zuteilung“ und je Konferenz im Plan eine Spalte."""
+        if self.plan is None or self.plan_modell is None:
+            return []
+        m = self.plan_modell
+        sets = {p.name: p for p in self.effektive_personen()}
+        besucht: dict[str, set[str]] = {}
+        for t in self.plan.termine:
+            for name in t.teilnehmer:
+                besucht.setdefault(name, set()).add(t.thema)
+        mit_konferenz = sum(1 for p in m.personen if m.themen_von(p.name))
+        ziel = max(1, round(mit_konferenz / len(m.themen))) if mit_konferenz and m.themen else 1
+
+        def karte(name: str, aktuell: str | None, chef: bool) -> KartenAnsicht:
+            menge = sets[name].themen if name in sets else ()
+            weitere = tuple(k for k in menge if k != aktuell and k in {t.name for t in m.themen})
+            return KartenAnsicht(name, weitere, chef, bool(menge) or chef)
+
+        spalten: list[SpaltenAnsicht] = []
+        ohne = [p.name for p in m.personen if p.name not in besucht]
+        spalten.append(
+            SpaltenAnsicht(None, tuple(karte(n, None, False) for n in ohne), None, 0, 0, len(ohne), False)
+        )
+        for t in m.themen:
+            mitglieder = sorted(
+                (n for n, ks in besucht.items() if t.name in ks), key=lambda n: (n != t.vorsitz, n.casefold())
+            )
+            termine = [x for x in self.plan.termine if x.thema == t.name]
+            klein = any(len(x.teilnehmer) < t.mindestanzahl for x in termine) or not termine
+            spalten.append(
+                SpaltenAnsicht(
+                    t.name,
+                    tuple(karte(n, t.name, n == t.vorsitz) for n in mitglieder),
+                    t.vorsitz,
+                    t.mindestanzahl,
+                    ziel,
+                    len(mitglieder),
+                    klein,
+                )
+            )
+        return spalten
+
+    def pruefe_verteilung(self) -> list[str]:
+        """Prüfhinweise zum aktuellen Plan: Mindestanzahl, Vorsitz, Überschneidung (SPEC-0013 FR-07)."""
+        if self.plan is None or self.plan_modell is None:
+            return []
+        return pruefe_plan(self.plan, self.plan_modell)
+
+    def _setze_pruefhinweise(self, plan: Plan, modell: Modell) -> Plan:
+        """Ersetzt die Prüfhinweise im Plan und vermerkt die manuelle Anpassung."""
+        warnungen = [w for w in plan.warnungen if not w.startswith(PRUEFPRAEFIX)]
+        if MANUELL not in warnungen:
+            warnungen.insert(0, MANUELL)
+        hinweise = [PRUEFPRAEFIX + h for h in pruefe_plan(plan, modell)]
+        return dataclasses.replace(plan, warnungen=warnungen + hinweise)
+
+    @property
+    def kann_rueckgaengig(self) -> bool:
+        return bool(self._rueckgaengig) and self._rueckgaengig[-1][1] is self.plan
+
+    def verschiebe(self, person: str, ziel: str, von: str | None = None) -> VerschiebeFolge:
+        """Legt die Lehrkraft in die Ziel-Konferenz und merkt die Zuweisung (SPEC-0013 FR-04, FR-06)."""
+        if self.plan is None or self.plan_modell is None:
+            raise ModellFehler("Kein Plan vorhanden")
+        m, plan = self.plan_modell, self.plan
+        self._person(person)
+        if ziel not in {t.name for t in m.themen}:
+            raise ModellFehler(f"{ziel} findet nicht statt")
+        if von == ziel:
+            return VerschiebeFolge(False, tuple(self.pruefe_verteilung()))
+        if von is not None and m.thema(von).vorsitz == person:
+            raise ModellFehler(
+                f"{person} ist Vorsitz von {von} und lässt sich nicht verschieben: Den Vorsitz zuerst im Dialog Bearbeiten ändern"
+            )
+
+        def belegt(t) -> set[int]:
+            return set(range(t.start_slot, t.start_slot + t.anzahl_slots))
+
+        meine = [i for i, t in enumerate(plan.termine) if person in t.teilnehmer]
+        kandidaten = [i for i, t in enumerate(plan.termine) if t.thema == ziel]
+        if not kandidaten:
+            raise ModellFehler(f"{ziel} hat keinen Termin im Plan")
+
+        def konflikte(k: int) -> list[int]:
+            return [
+                i
+                for i in meine
+                if plan.termine[i].thema != ziel
+                and (plan.termine[i].thema == von or belegt(plan.termine[i]) & belegt(plan.termine[k]))
+            ]
+
+        wahl = min(kandidaten, key=lambda k: (len(konflikte(k)), k))
+        raus = set(konflikte(wahl)) | {i for i in meine if plan.termine[i].thema == von}
+        for i in raus:
+            if m.thema(plan.termine[i].thema).vorsitz == person:
+                raise ModellFehler(
+                    f"{person} ist Vorsitz von {plan.termine[i].thema} (gleiche Zeit) und lässt sich nicht verschieben"
+                )
+        basis = self.konferenzen_von(person)
+        ausnahme = ziel not in basis and m.thema(ziel).vorsitz != person
+
+        vorher = copy.deepcopy(self.zuordnung.personen.get(person))
+        markiert_vorher = frozenset(self.zuordnung.markiert)
+        reihenfolge = {p.name: i for i, p in enumerate(m.personen)}
+        neue = []
+        for i, t in enumerate(plan.termine):
+            namen = [n for n in t.teilnehmer if not (n == person and i in raus)]
+            if i == wahl and person not in namen:
+                namen.append(person)
+            neue.append(
+                dataclasses.replace(t, teilnehmer=tuple(sorted(namen, key=lambda n: reihenfolge.get(n, 0))))
+            )
+        a = self.zuordnung.aenderung(person)
+        a.zuweisung = tuple(sorted((set(a.zuweisung) - ({von} if von else set())) | {ziel}))
+        if ausnahme:
+            a.konferenzen = (*basis, ziel)
+        neu = self._setze_pruefhinweise(dataclasses.replace(plan, termine=neue), m)
+        self.plan = neu
+        self._rueckgaengig.append((plan, neu, person, vorher, markiert_vorher))
+        del self._rueckgaengig[:-MAX_RUECKGAENGIG]
+        self.speichere()
+        return VerschiebeFolge(ausnahme, tuple(self.pruefe_verteilung()))
+
+    def rueckgaengig(self) -> bool:
+        """Nimmt die letzte Verschiebung zurück: Plan, Set und Zuweisung der Lehrkraft (SPEC-0013 FR-08)."""
+        if not self.kann_rueckgaengig:
+            self._rueckgaengig.clear()
+            return False
+        alt, _neu, person, aenderung, markiert = self._rueckgaengig.pop()
+        self.plan = alt
+        if aenderung is None:
+            self.zuordnung.personen.pop(person, None)
+        else:
+            self.zuordnung.personen[person] = aenderung
+        self.zuordnung.markiert = set(markiert)
+        self.speichere()
+        return True
 
     def setze_fest(self, person: str, termine: set[Termin]) -> None:
         """Gibt die Teilnahme an Konferenzterminen fest vor (SPEC-0010 FR-05)."""

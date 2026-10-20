@@ -112,7 +112,6 @@ def test_unbekannte_namen_haben_eine_stabile_farbe_ohne_beachtung_der_schreibwei
 
 def test_punkt_symbole(qapp):
     assert not punkt("#ff0000").isNull() and not fachpunkt("Deutsch").isNull()
-    assert punkt("#ff0000") is punkt("#ff0000")  # gecacht
     img = punkt("#ff0000", 10).pixmap(20, 20).toImage()
     assert img.pixelColor(10, 10).name() == "#ff0000" and img.pixelColor(0, 0).alpha() == 0
 

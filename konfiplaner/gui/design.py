@@ -10,7 +10,6 @@ from __future__ import annotations
 import tempfile
 import zlib
 from dataclasses import dataclass
-from functools import lru_cache
 from pathlib import Path
 
 from PySide6.QtCore import QPointF, QRectF, Qt
@@ -108,7 +107,6 @@ def registriere_fachfarben(namen: list[str]) -> None:
     _register.clear()
     for i, name in enumerate(sorted(dict.fromkeys(namen), key=str.casefold)):
         _register[name] = _fachfarbe_aus_index(i)
-    punkt.cache_clear()
 
 
 def fachfarbe(name: str) -> QColor:
@@ -118,9 +116,8 @@ def fachfarbe(name: str) -> QColor:
     return _fachfarbe_aus_index(zlib.crc32(name.casefold().encode()))
 
 
-@lru_cache(maxsize=256)
 def punkt(farbe_hex: str, durchmesser: int = 10, ring: bool = False) -> QIcon:
-    """Kleiner Farbpunkt als Symbol."""
+    """Kleiner Farbpunkt als Symbol. Bewusst ohne Zwischenspeicher: Pixmaps dürfen die QApplication nicht überleben."""
     px = QPixmap(durchmesser * 2, durchmesser * 2)
     px.fill(Qt.GlobalColor.transparent)
     p = QPainter(px)
