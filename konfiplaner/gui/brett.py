@@ -117,6 +117,11 @@ class SpaltenListe(QListWidget):
     abgelegt = Signal(str, object, object)  # Lehrkraft, von (Konferenz oder None), nach (Konferenz oder None)
     ziehen_ueber = Signal(object)  # None | "imset" | "ausnahme"
 
+    # Läuft gerade ein Ziehen, wartet die Ablage bis QDrag.exec() zurück ist: Das Brett baut sich beim
+    # Verschieben neu auf und würde sonst die Quellspalte mitten im Ziehen löschen (Absturz unter macOS).
+    _zieht = False
+    _ausstehend: tuple[SpaltenListe, str, object, object] | None = None
+
     def __init__(self, konferenz: str | None) -> None:
         super().__init__()
         self.konferenz = konferenz
@@ -134,6 +139,17 @@ class SpaltenListe(QListWidget):
         self.setUniformItemSizes(True)
 
     # ── Ziehen ───────────────────────────────────────────────────────────────
+    def startDrag(self, actions: Qt.DropAction) -> None:
+        SpaltenListe._zieht = True
+        try:
+            super().startDrag(actions)
+        finally:
+            SpaltenListe._zieht = False
+            ausstehend, SpaltenListe._ausstehend = SpaltenListe._ausstehend, None
+        if ausstehend is not None:
+            ziel, person, von, nach = ausstehend
+            ziel.abgelegt.emit(person, von, nach)
+
     def mimeTypes(self) -> list[str]:
         return [MIME]
 
@@ -192,7 +208,10 @@ class SpaltenListe(QListWidget):
         # Das Brett baut sich nach dem Verschieben neu auf; Qt soll die Karte nicht selbst umhängen
         event.setDropAction(Qt.DropAction.IgnoreAction)
         event.accept()
-        self.abgelegt.emit(nutz["person"], nutz["von"], self.konferenz)
+        if SpaltenListe._zieht:
+            SpaltenListe._ausstehend = (self, nutz["person"], nutz["von"], self.konferenz)
+        else:
+            self.abgelegt.emit(nutz["person"], nutz["von"], self.konferenz)
 
 
 class SpaltenFeld(QFrame):

@@ -382,3 +382,23 @@ def test_beschriftung_und_zugaenglichkeit(qtbot, tmp_path):
         for fe in brett.felder
     )
     assert QApplication.instance() is not None
+
+
+def test_ablage_waehrend_des_ziehens_wartet_bis_das_ziehen_beendet_ist(qtbot, tmp_path, monkeypatch):
+    """Das Brett darf die Quellspalte nicht mitten im Ziehen neu aufbauen (Absturz unter macOS)."""
+    f = fenster(qtbot, tmp_path)
+    k = beweglich(f)
+    quelle = spalte(f, "Sport").liste
+    ziel_name = k.weitere[0]
+    zustand = {}
+
+    def ziehen(self, actions):
+        ziehen_nach(f, "Sport", k.name, ziel_name)
+        zustand["felder_waehrend"] = list(f.ergebnis.brett.felder)
+        zustand["zuweisung_waehrend"] = k.name in namen(f, "Sport")
+
+    monkeypatch.setattr("PySide6.QtWidgets.QListWidget.startDrag", ziehen)
+    quelle.startDrag(Qt.DropAction.MoveAction)
+    assert zustand["zuweisung_waehrend"]  # währenddessen unverändert
+    assert f.ergebnis.brett.felder != zustand["felder_waehrend"]  # danach neu aufgebaut
+    assert k.name in namen(f, ziel_name) and k.name not in namen(f, "Sport")
