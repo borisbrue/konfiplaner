@@ -15,6 +15,7 @@ from konfiplaner.gui.hauptfenster import (
     SEITE_KONFERENZEN,
     SEITE_LEHRKRAEFTE,
     SEITE_PLANEN,
+    SEITE_REGELN,
     Hauptfenster,
 )
 from konfiplaner.gui.seitenleiste import AKTUELL, FERTIG, GESPERRT, OFFEN
@@ -290,3 +291,14 @@ def test_dateiname_in_der_seitenleiste(qtbot, tmp_path):
     assert f.leiste.datei.text() == "Keine Datei geladen"
     f.datei_oeffnen()
     assert f.leiste.datei.text() == "k.xlsx"
+
+
+def test_pruefschritte_bekommen_haken_nach_dem_ansehen(qtbot, tmp_path):
+    f = fenster(qtbot, tmp_path)
+    for seite in (SEITE_KONFERENZEN, SEITE_LEHRKRAEFTE, SEITE_REGELN):
+        assert schritt(f, seite).zustand != FERTIG
+    for seite in (SEITE_KONFERENZEN, SEITE_LEHRKRAEFTE, SEITE_REGELN, SEITE_PLANEN):
+        f.reiter.setCurrentIndex(seite)
+    assert [schritt(f, i).zustand for i in (1, 2, 3)] == [FERTIG] * 3
+    f.neu_laden()  # neue Daten: Prüfschritte beginnen von vorn
+    assert [schritt(f, i).zustand for i in (1, 2, 3)] != [FERTIG] * 3 and schritt(f, 2).zustand == OFFEN

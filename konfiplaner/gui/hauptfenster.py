@@ -32,6 +32,8 @@ from konfiplaner.modell import Plan
 ) = range(6)
 
 
+PRUEFSCHRITTE = (SEITE_KONFERENZEN, SEITE_LEHRKRAEFTE, SEITE_REGELN)
+
 SCHRITTE = (
     ("Daten", "Daten laden", "Excel-Liste öffnen, Fehler prüfen und Konferenznamen vereinheitlichen."),
     (
@@ -109,7 +111,10 @@ class Hauptfenster(QMainWindow):
         self.setCentralWidget(zentrum)
         self.setAcceptDrops(True)
         self.statusBar().setSizeGripEnabled(False)
-        self.reiter.currentChanged.connect(lambda _i: self._aktualisiere_leiste())
+        # Prüfschritte (Konferenzen, Lehrkräfte, Regeln) gelten als erledigt, sobald man sie angesehen und verlassen hat
+        self._gesehen: set[int] = set()
+        self._vorher = self.reiter.currentIndex()
+        self.reiter.currentChanged.connect(self._seite_gewechselt)
         for i in range(len(SCHRITTE)):
             QShortcut(QKeySequence(f"Ctrl+{i + 1}"), self, activated=lambda i=i: self._waehle_seite(i))
 
@@ -215,11 +220,20 @@ class Hauptfenster(QMainWindow):
             ergebnis,
         ]
 
+    def _seite_gewechselt(self, i: int) -> None:
+        if self._vorher in PRUEFSCHRITTE and self.sitzung.ergebnis is not None:
+            self._gesehen.add(self._vorher)
+        self._vorher = i
+        self._aktualisiere_leiste()
+
     def _aktualisiere_leiste(self) -> None:
         """Seitenleiste und Seitenkopf folgen dem Zustand der Sitzung."""
         aktuell = self.reiter.currentIndex()
         fertig = {
             SEITE_DATEN: self.sitzung.ergebnis is not None and not self.sitzung.ergebnis.fehler,
+            SEITE_KONFERENZEN: SEITE_KONFERENZEN in self._gesehen and bool(self.sitzung.konferenzen()),
+            SEITE_LEHRKRAEFTE: SEITE_LEHRKRAEFTE in self._gesehen and not self.sitzung.neu_zuordnen,
+            SEITE_REGELN: SEITE_REGELN in self._gesehen,
             SEITE_PLANEN: self.sitzung.plan is not None,
             SEITE_ERGEBNIS: self.sitzung.plan is not None,
         }
@@ -300,6 +314,7 @@ class Hauptfenster(QMainWindow):
                 self.dialoge.fehler("Datei laden", str(e))
             return
         self._gemeldete_aenderung = None
+        self._gesehen.clear()
         registriere_fachfarben([t.name for t in self.sitzung.themen])
         self.regeln.aktualisieren()  # das Profil der Datei kann Regeln umstellen
         self.konferenzen.aktualisieren()
