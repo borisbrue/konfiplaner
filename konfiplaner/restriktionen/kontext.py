@@ -49,5 +49,8 @@ class Planungskontext(Protocol):
         Je nach Typ der Restriktion hart (muss gelten) oder weich (Verstoß kostet Gewicht × `faktor`).
         """
 
+    def abweichung(self, terme: list[Term], ziel: int, text: str, faktor: float = 1.0) -> None:
+        """Fügt der Zielfunktion `|Σ koeff*var - ziel| * gewicht * faktor` hinzu (nur weiche Restriktionen)."""
+
     def strafe(self, terme: list[Term], text: str) -> None:
         """Fügt `Σ koeff*var * gewicht` zur Zielfunktion hinzu (nur weiche Restriktionen)."""

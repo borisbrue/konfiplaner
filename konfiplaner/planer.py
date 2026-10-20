@@ -16,6 +16,8 @@ class PlanerOptionen:
     seed: int = 1
     # 0 = Solver wählt. Reproduzierbare Pläne gibt es nur mit 1 Worker (SPEC-0002 NFR).
     arbeiter: int = 0
+    # Höchstzahl der Termine je Thema ohne Festtermine; Lehrerlisten setzen 1: eine Konferenz = ein Treffen
+    max_termine_je_thema: int = 3
 
 
 @dataclass(frozen=True)
@@ -28,9 +30,11 @@ class Fixierungen:
 
     teilnahmen: dict[str, dict[tuple[str, int], bool]] = field(default_factory=dict)
     termine: dict[str, tuple[int, ...]] = field(default_factory=dict)
+    # Person -> Konferenzen, an denen sie mindestens einmal teilnimmt (SPEC-0012 FR-09)
+    konferenzen: dict[str, tuple[str, ...]] = field(default_factory=dict)
 
     def leer(self) -> bool:
-        return not self.teilnahmen and not self.termine
+        return not self.teilnahmen and not self.termine and not self.konferenzen
 
 
 @dataclass(frozen=True)

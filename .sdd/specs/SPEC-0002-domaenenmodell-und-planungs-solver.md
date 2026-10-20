@@ -75,6 +75,7 @@ Kern von KonfiPlaner: aus Personen, Themen und Zeitslots einen Terminplan berech
 - **FR-01 (Modell):** Domänenobjekte `Thema` (Name, Wichtigkeit, Mindestanzahl, Dauer), `Person` (Name, 0 bis n verschiedene, geordnete Schwerpunktthemen – das Minimalformat des Imports liefert genau 2, Lehrerlisten 0 bis 3 und mehr; SPEC-0007 FR-12, Verfügbarkeit), `Zeitslot`, `Termin` (Thema, Slot(s), Teilnehmer), `Plan`.
 - **FR-02 (Themenabdeckung):** Jedes Thema findet statt. Es darf genau einen Termin je Thema geben; mehr sind möglich, aber nicht erforderlich. Kein Thema darf entfallen (hart, aber über SPEC-0003 anpassbar).
 - **FR-03 (Mindestanzahl):** `Mindestanzahl` ist die Mindest-Teilnehmerzahl pro Termin (der Vorsitz zählt mit, SPEC-0006); jeder Termin des Themas erreicht sie (hart, anpassbar).
+- **FR-16 (Verteilung, SPEC-0012):** `schwerpunkte` verlangt den Besuch aller Konferenzen einer Person (hart) oder bestraft jeden Verlust (weich). `verteilung` verlangt nur mindestens eine, `rangfolge` und `ausgleich` steuern die Vorliebe und die Größe. Für Lehrerlisten ist `schwerpunkte` im Profil „Verteilen" aus.
 - **FR-15 (Fixierungen, SPEC-0010):** `Planer.planen` nimmt optionale `Fixierungen` (feste Teilnahmen, feste Startslots) entgegen. Sie sind hart, und die Diagnose nennt sie als Regel `fixierung`.
 - **FR-14 (Auswahl, SPEC-0009):** Das Modell enthält nur die ausgewählten Themen; `themenabdeckung` bezieht sich auf diese. Abgewählte Themen sind nicht Teil des Modells.
 - **FR-13 (Festtermine, SPEC-0008):** Ein `Thema` kann feste Termine (Zeitfenster) haben; dann findet es genau dort statt und der Solver wählt keine Startslots. Eine Person nimmt je Thema an höchstens einem Termin teil (der Vorsitz an allen).
@@ -162,3 +163,4 @@ Feature: Planung
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0008 (Festtermine, Rangfaktor), Version unverändert |
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0009: Auswahl, Version unverändert |
 | 2026-10-19 | +      | Boris Brünen | Nachtrag zu SPEC-0010 (Fixierungen, Lehrkräfte), Version unverändert |
+| 2026-10-20 | +      | Boris Brünen | Nachtrag zu SPEC-0012 (Verteilen), Version unverändert |

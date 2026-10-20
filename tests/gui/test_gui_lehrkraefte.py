@@ -284,7 +284,7 @@ def test_teilneuplanung_die_nicht_aufgeht_laesst_plan_und_markierung(qtbot, tmp_
         qtbot.mouseClick(f.lehrkraefte.teil, Qt.MouseButton.LeftButton)
     assert f.sitzung.plan is alt and f.sitzung.markiert == ["Ben Zwei"]
     assert f.reiter.currentIndex() == SEITE_PLANEN
-    assert "Teilneuplanung nicht möglich" in f.planen.stand.text() and "Sport" in f.planen.stand.text()
+    assert "Teilneuplanung nicht möglich" in f.planen.stand.text() and "Ben Zwei" in f.planen.stand.text()
     assert "nicht möglich" in f.statusBar().currentMessage()
     assert "neu zu verplanen" in zeile(f, "Ben Zwei")[3]
 

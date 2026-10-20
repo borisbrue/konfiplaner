@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from konfiplaner.anwendung import RegelAnsicht, Sitzung
+from konfiplaner.anwendung import PROFIL_NAMEN, RegelAnsicht, Sitzung
 from konfiplaner.restriktionen import KonfigurationsFehler
 
 TYP_ANZEIGE = {"hart": "Muss gelten (hart)", "weich": "Soll gelten (weich)", "aus": "Aus"}
@@ -38,6 +38,7 @@ def _umhuellt(widget: QWidget) -> QWidget:
 
 class RegelnSeite(QWidget):
     hinweis = Signal(str)
+    profil_geaendert = Signal()
 
     def __init__(self, sitzung: Sitzung, dialoge) -> None:
         super().__init__()
@@ -64,7 +65,17 @@ class RegelnSeite(QWidget):
         knoepfe.addWidget(self.standard)
         knoepfe.addWidget(self.laden)
         knoepfe.addStretch(1)
+        # Profil: legt fest, wie sich Lehrkräfte auf ihre Konferenzen verteilen (SPEC-0012)
+        self.profil = QComboBox()
+        self.profil.setAccessibleName("Profil")
+        for schluessel, text in PROFIL_NAMEN.items():
+            self.profil.addItem(text, schluessel)
+        self.profil.currentIndexChanged.connect(self._profil_gewaehlt)
+        profilzeile = QHBoxLayout()
+        profilzeile.addWidget(QLabel("Profil:"))
+        profilzeile.addWidget(self.profil, 1)
         wurzel = QVBoxLayout(self)
+        wurzel.addLayout(profilzeile)
         erklaerung = QLabel(
             "Harte Regeln müssen gelten, sonst gibt es keinen Plan. Weiche Regeln dürfen verletzt werden; "
             "ein höheres Gewicht macht eine Verletzung teurer."
@@ -78,7 +89,19 @@ class RegelnSeite(QWidget):
         self.laden.clicked.connect(self._lade_datei)
         self.aktualisieren()
 
+    def _profil_gewaehlt(self) -> None:
+        schluessel = self.profil.currentData()
+        if schluessel == self.sitzung.profil:
+            return
+        self.sitzung.setze_profil(schluessel)
+        self.aktualisieren()
+        self.profil_geaendert.emit()
+        self.hinweis.emit(f"Profil: {PROFIL_NAMEN[schluessel]}")
+
     def aktualisieren(self) -> None:
+        self.profil.blockSignals(True)
+        self.profil.setCurrentIndex(max(0, self.profil.findData(self.sitzung.profil)))
+        self.profil.blockSignals(False)
         regeln = self.sitzung.regeln()
         self.tabelle.setRowCount(len(regeln))
         self._regeln = {r.name: r for r in regeln}

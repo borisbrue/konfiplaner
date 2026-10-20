@@ -62,7 +62,7 @@ Bei Fachkonferenzen legt die Schule die Termine fest; viele Konferenzen finden g
 - **FR-03 (Zeitraster):** Aus den Zeitfenstern aller Konferenzen entsteht je Tag ein lückenloses Raster der überdeckten Abschnitte (Grenzen = alle Anfangs-/Endzeiten). Zwei Termine überschneiden sich genau dann, wenn sie einen Abschnitt teilen; Teilüberlappungen werden dadurch erfasst. Das Blatt `Zeitslots` und das Zeitraster-Formular entfallen für Konferenzen mit Festterminen.
 - **FR-04 (Solver):** Jeder feste Termin findet statt (kein Kandidat entfällt, `themenabdeckung` gilt je Termin). Eine Person nimmt je Konferenz an höchstens einem Termin teil (der Vorsitz an allen, SPEC-0006).
 - **FR-05 (Rangfolge):** Konflikte (Überschneidungen) löst die Regel `schwerpunkte`, wenn sie weich ist: Eine entgangene Teilnahme kostet Gewicht × Rangfaktor mit 100 für die erste, 10 für die zweite und 1 für weitere Konferenzen der Person. Dazu nimmt `Planungskontext.bedingung` einen optionalen `faktor` entgegen (SPEC-0003 FR-07).
-- **FR-06 (Voreinstellung):** Enthält die Datei Konferenztermine, ist `schwerpunkte` standardmäßig weich, solange die Nutzerin die Regel nicht selbst gesetzt hat. Gespeichert werden nur von Hand gesetzte Regeln.
+- **FR-06 (Voreinstellung):** Für Lehrerlisten gilt das Profil „Verteilen" (SPEC-0012 FR-01) und löst dieses Profil ab. Für andere Dateien gilt: Enthält die Datei Konferenztermine, ist `schwerpunkte` standardmäßig weich, solange die Nutzerin die Regel nicht selbst gesetzt hat. Gespeichert werden nur von Hand gesetzte Regeln.
 - **FR-07 (Konflikte sichtbar):** Jede entgangene Teilnahme steht als Verstoß mit Person und Konferenz im Plan, im Ergebnis (GUI) und im Export-Blatt „Hinweise".
 - **FR-08 (Hauptkonferenz):** Die Spalte `Hauptkonferenz` verknüpft eine Unterkonferenz mit ihrer Hauptkonferenz. Beginnt ein Termin der Unterkonferenz nicht nach dem Ende aller Termine der Hauptkonferenz, ist das eine Warnung. Weitere Wirkung gibt es nicht (offene Frage).
 - **FR-09 (Vorsitz):** Ist der Vorsitz zeitgleich in zwei Konferenzen eingetragen, gibt es keinen Plan mit harter Regel `vorsitz` und eine Begründung, die beide Konferenzen nennt (SPEC-0006 FR-09).
@@ -118,3 +118,4 @@ Feature: Konferenzplanung
 | Datum      | Version | Autor        | Änderung            |
 |------------|---------|--------------|---------------------|
 | 2026-10-19 | 0.1.0   | Boris Brünen | Initiale Erstellung |
+| 2026-10-20 | +      | Boris Brünen | Nachtrag zu SPEC-0012 (Verteilen), Version unverändert |

@@ -1,0 +1,128 @@
+{
+  "spec_id": "SPEC-0012",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0012-R001",
+      "type": "conflict",
+      "severity": "high",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0008:FR-06",
+      "detail": "SPEC-0012 FR-01 ersetzt für Lehrerlisten das Profil „Festtermine“ aus SPEC-0008 durch ein neues Standardprofil „Verteilen“ (Regeln hart/weich/aus). Es nutzt dabei die Regel „von Hand gesetzt“ aus SPEC-0008 FR-06, ändert aber das dort definierte Standardverhalten, ohne dass SPEC-0008 angepasst wird.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt und nachgezogen: Das Profil Verteilen gilt für Lehrerlisten und löst Festtermine dort ab (SPEC-0008 FR-06); schwerpunkte (alle besuchen) und verteilung (mindestens eine) sind getrennte Regeln (SPEC-0002 FR-16); Vorsitz/Mindestanzahl bleiben hart.",
+        "resolved_at": "2026-10-20T07:39:12Z"
+      }
+    },
+    {
+      "id": "CF-0012-R002",
+      "type": "overlap",
+      "severity": "high",
+      "new_contract": "FR-03",
+      "conflicting_contract": "SPEC-0008:FR-03",
+      "detail": "SPEC-0008 löst Überschneidungen über die Rangfolge FK I vor II vor III. Die neue Regel `rangfolge` in SPEC-0012 bewertet nicht besuchte Konferenzen ebenfalls nach Rang (100/10/…), also dieselbe Fachlogik mit zwei Mechanismen und womöglich zwei Verstoß-Arten.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt und nachgezogen: Das Profil Verteilen gilt für Lehrerlisten und löst Festtermine dort ab (SPEC-0008 FR-06); schwerpunkte (alle besuchen) und verteilung (mindestens eine) sind getrennte Regeln (SPEC-0002 FR-16); Vorsitz/Mindestanzahl bleiben hart.",
+        "resolved_at": "2026-10-20T07:39:13Z"
+      }
+    },
+    {
+      "id": "CF-0012-R004",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-02",
+      "conflicting_contract": "SPEC-0006:FR-01",
+      "detail": "SPEC-0012 verlangt, dass der Vorsitz in seiner Konferenz gesetzt ist. Das ist bereits Regel `vorsitz` in SPEC-0006 (Vorsitz in jedem Termin seines Themas). `verteilung` zählt den Vorsitz zugleich als „wirksame Konferenz“, was eine zweite Quelle für diese Pflicht schafft.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt und nachgezogen: Das Profil Verteilen gilt für Lehrerlisten und löst Festtermine dort ab (SPEC-0008 FR-06); schwerpunkte (alle besuchen) und verteilung (mindestens eine) sind getrennte Regeln (SPEC-0002 FR-16); Vorsitz/Mindestanzahl bleiben hart.",
+        "resolved_at": "2026-10-20T07:39:13Z"
+      }
+    },
+    {
+      "id": "CF-0012-R005",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0002:FR-03",
+      "detail": "SPEC-0012 schaltet die bestehende Grundregel `schwerpunkte` (jede Person besucht alle ihre Themen) im Standardprofil aus und ersetzt sie durch `verteilung`. Das ändert die in SPEC-0002 definierte Kernsemantik der Schwerpunktzuordnung.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt und nachgezogen: Das Profil Verteilen gilt für Lehrerlisten und löst Festtermine dort ab (SPEC-0008 FR-06); schwerpunkte (alle besuchen) und verteilung (mindestens eine) sind getrennte Regeln (SPEC-0002 FR-16); Vorsitz/Mindestanzahl bleiben hart.",
+        "resolved_at": "2026-10-20T07:39:13Z"
+      }
+    },
+    {
+      "id": "CF-0012-R006",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0002:FR-05",
+      "detail": "Die neue weiche Regel `ausgleich` (Abweichung der Teilnehmerzahlen von der Zielgröße) deckt sich mit den gewichteten Zielen und der Mindestanzahl-Sicherung des Solvers in SPEC-0002, sodass ein ähnliches Ziel doppelt modelliert wird.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt und nachgezogen: Das Profil Verteilen gilt für Lehrerlisten und löst Festtermine dort ab (SPEC-0008 FR-06); schwerpunkte (alle besuchen) und verteilung (mindestens eine) sind getrennte Regeln (SPEC-0002 FR-16); Vorsitz/Mindestanzahl bleiben hart.",
+        "resolved_at": "2026-10-20T07:39:14Z"
+      }
+    },
+    {
+      "id": "CF-0012-R007",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-02",
+      "conflicting_contract": "SPEC-0003:FR-01",
+      "detail": "Die neuen Grundregeln `verteilung`, `rangfolge` und `ausgleich` müssen als Plugins in der Registry von SPEC-0003 laufen, und Profile müssen die Regeln pro Lauf hart/weich/aus schalten. Das ist mit der generischen Aktivierung und Gewichtung aus SPEC-0003 abzustimmen, damit keine zweite Schaltlogik entsteht.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt und nachgezogen: Das Profil Verteilen gilt für Lehrerlisten und löst Festtermine dort ab (SPEC-0008 FR-06); schwerpunkte (alle besuchen) und verteilung (mindestens eine) sind getrennte Regeln (SPEC-0002 FR-16); Vorsitz/Mindestanzahl bleiben hart.",
+        "resolved_at": "2026-10-20T07:39:14Z"
+      }
+    },
+    {
+      "id": "CF-0012-R008",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-02",
+      "conflicting_contract": "SPEC-0009:FR-02",
+      "detail": "„Wirksame Konferenz“ in `verteilung` (Schwerpunkt oder Vorsitz) hängt von der Konferenzauswahl und dem Nachrücken der Rangfolge in SPEC-0009 ab, und beide Specs beschreiben, wie mit Personen ohne verbleibende Konferenz umzugehen ist.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt und nachgezogen: Das Profil Verteilen gilt für Lehrerlisten und löst Festtermine dort ab (SPEC-0008 FR-06); schwerpunkte (alle besuchen) und verteilung (mindestens eine) sind getrennte Regeln (SPEC-0002 FR-16); Vorsitz/Mindestanzahl bleiben hart.",
+        "resolved_at": "2026-10-20T07:39:15Z"
+      }
+    },
+    {
+      "id": "CF-0012-R009",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0010:FR-05",
+      "detail": "SPEC-0010 erlaubt fest vorgegebene Teilnahmen und Teilneuplanung nur der markierten Lehrkräfte. Die automatische Verteilung in SPEC-0012 (Mindestanzahl, Ausgleich) muss damit zusammenspielen, überschneidet sich aber mit der manuellen Zuordnung desselben Problems, wer an welcher Konferenz teilnimmt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgegrenzt und nachgezogen: Das Profil Verteilen gilt für Lehrerlisten und löst Festtermine dort ab (SPEC-0008 FR-06); schwerpunkte (alle besuchen) und verteilung (mindestens eine) sind getrennte Regeln (SPEC-0002 FR-16); Vorsitz/Mindestanzahl bleiben hart.",
+        "resolved_at": "2026-10-20T07:39:15Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-10-20T07:39:38Z"
+}

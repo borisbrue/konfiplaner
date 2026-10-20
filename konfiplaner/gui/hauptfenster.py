@@ -120,6 +120,7 @@ class Hauptfenster(QMainWindow):
         for seite in (self.daten, self.konferenzen, self.lehrkraefte, self.regeln, self.planen):
             seite.hinweis.connect(self._hinweis)
         self.konferenzen.auswahl_geaendert.connect(self._auswahl_geaendert)
+        self.regeln.profil_geaendert.connect(self._auswahl_geaendert)
         self.lehrkraefte.aenderung.connect(self._zuordnung_geaendert)
         self.lehrkraefte.neu_planen_gewuenscht.connect(self._neu_planen)
         self.planen.teil_gescheitert.connect(lambda _p: self.lehrkraefte.aktualisieren())

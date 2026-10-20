@@ -50,7 +50,14 @@ def test_standardkonfiguration_enthaelt_alle_grundregeln_mit_standardtypen():
     k = standard_konfiguration()
     assert set(k.einstellungen) == set(GRUNDREGELN)
     assert k.einstellungen["wichtigkeit"].typ == "weich"
-    assert all(e.typ == "hart" for n, e in k.einstellungen.items() if n != "wichtigkeit")
+    # Verteilungsregeln (SPEC-0012) sind ohne Profil aus, alle übrigen Grundregeln hart
+    for name in ("verteilung", "rangfolge", "ausgleich"):
+        assert k.einstellungen[name].typ == "aus"
+    assert all(
+        e.typ == "hart"
+        for n, e in k.einstellungen.items()
+        if n not in ("wichtigkeit", "verteilung", "rangfolge", "ausgleich")
+    )
 
 
 def test_konfiguration_ueberschreibt_basis():

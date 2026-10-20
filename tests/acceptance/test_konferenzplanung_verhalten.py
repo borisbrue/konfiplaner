@@ -29,6 +29,9 @@ def lese(tmp_path, zeilen, *termine, norm=None, **kw):
 def sitzung(tmp_path, zeilen, *termine, **kw):
     s = Sitzung()
     s.lade(schreibe(tmp_path / "k.xlsx", lehrer_mit_terminen(zeilen, *termine, **kw)))
+    s.setze_profil(
+        "festtermine"
+    )  # SPEC-0008: Rangfolge bei gleichzeitigen Terminen (SPEC-0012: Profil wählbar)
     return s
 
 
@@ -168,8 +171,13 @@ def test_vorsitz_in_zwei_gleichzeitigen_konferenzen(tmp_path):
 
 
 def test_standardregel_fuer_lehrerlisten_mit_terminen(tmp_path):
-    s = sitzung(tmp_path, ZEILEN, ("Deutsch", *MI), ("Sport", *MI))
+    s = Sitzung()
+    s.lade(schreibe(tmp_path / "k.xlsx", lehrer_mit_terminen(ZEILEN, ("Deutsch", *MI), ("Sport", *MI))))
+    # Lehrerlisten verteilen sich standardmäßig (SPEC-0012): „alle besuchen“ ist aus
+    assert {r.name: r.typ for r in s.regeln()}["schwerpunkte"] == "aus"
+    s.setze_profil("festtermine")
     assert {r.name: r.typ for r in s.regeln()}["schwerpunkte"] == "weich"
+    s.setze_profil("auto")
     s.lade(
         schreibe(
             tmp_path / "ohne.xlsx",
@@ -180,7 +188,9 @@ def test_standardregel_fuer_lehrerlisten_mit_terminen(tmp_path):
             },
         )
     )
-    assert {r.name: r.typ for r in s.regeln()}["schwerpunkte"] == "hart"  # Profil folgt der Datei
+    assert {r.name: r.typ for r in s.regeln()}[
+        "schwerpunkte"
+    ] == "hart"  # Profil folgt der Datei (Minimalformat)
 
 
 def test_selbst_gesetzte_regel_bleibt(tmp_path):

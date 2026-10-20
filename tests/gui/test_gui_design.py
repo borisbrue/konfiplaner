@@ -67,7 +67,7 @@ def test_seitenleiste_zeigt_alle_schritte_mit_nummer_name_und_kurzstatus(qtbot, 
     ]
     assert [s.nummer for s in f.leiste.schritte] == [1, 2, 3, 4, 5, 6]
     assert schritt(f, 0).status == "6 Lehrkräfte" and schritt(f, 1).status == "3 von 3 ausgewählt"
-    assert schritt(f, 2).status == "Unverändert" and schritt(f, 3).status == "5 hart, 2 weich"
+    assert schritt(f, 2).status == "Unverändert" and schritt(f, 3).status == "6 hart, 3 weich"
     assert schritt(f, 4).status == "Bereit" and schritt(f, 5).status == "Noch kein Plan"
     assert all(s.accessibleName().startswith("Schritt ") for s in f.leiste.schritte)
     assert not f.reiter.tabBar().isVisible()  # die Seitenleiste ersetzt die Tab-Leiste

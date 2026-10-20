@@ -29,8 +29,15 @@ class _Verletzung:
 class _CpSatKontext:
     """Adapter: übersetzt `Planungskontext` auf ein CP-SAT-Modell."""
 
-    def __init__(self, modell: Modell, mit_annahmen: bool, fixierungen: Fixierungen | None = None) -> None:
+    def __init__(
+        self,
+        modell: Modell,
+        mit_annahmen: bool,
+        fixierungen: Fixierungen | None = None,
+        max_termine: int = MAX_TERMINE_JE_THEMA,
+    ) -> None:
         self.modell = modell
+        self._max_termine = max_termine
         self._fix = fixierungen or Fixierungen()
         self.cp = cp_model.CpModel()
         self._mit_annahmen = mit_annahmen
@@ -63,7 +70,7 @@ class _CpSatKontext:
                     moegliche = n // t.mindestanzahl
                 else:  # der Vorsitz sitzt in jedem Termin: die übrigen müssen nur Mindestanzahl - 1 stellen
                     moegliche = (n - 1) // max(1, t.mindestanzahl - 1)
-                self._k[t.name] = max(1, min(MAX_TERMINE_JE_THEMA, moegliche))
+                self._k[t.name] = max(1, min(self._max_termine, moegliche))
             geplant = self._geplante_starts(t.name, fest)
             if geplant:
                 self._k[t.name] = max(self._k[t.name], len(geplant))
@@ -176,6 +183,16 @@ class _CpSatKontext:
             if koeff:
                 self._ziel.append(koeff * v)
 
+    def abweichung(self, terme: list[Term], ziel: int, text: str, faktor: float = 1.0) -> None:
+        summe = sum(k * v for k, v in terme)
+        schranke = sum(abs(k) for k, _ in terme) + abs(ziel)
+        abstand = self.cp.NewIntVar(0, max(1, schranke), "")
+        self.cp.Add(abstand >= summe - ziel)
+        self.cp.Add(abstand >= ziel - summe)
+        koeff = round(self._gewicht * faktor)
+        if koeff:
+            self._ziel.append(koeff * abstand)
+
     # ── Adapter-intern ───────────────────────────────────────────────────────
     def setze_regel(self, name: str, typ: str, gewicht: float) -> None:
         self._regel, self._typ, self._gewicht = name, typ, gewicht
@@ -195,6 +212,21 @@ class _CpSatKontext:
                         self._pflicht(self.cp.NewConstant(0), 1, text)
                     continue
                 self._pflicht(var, 1 if wert else 0, text)
+
+    def _fixiere_konferenzen(self) -> None:
+        """Konferenzen, an denen eine Person mindestens einmal teilnimmt (SPEC-0012 FR-09)."""
+        for person, konferenzen in self._fix.konferenzen.items():
+            for thema in konferenzen:
+                var = [v for (p, t, _j), v in self._teil.items() if p == person and t == thema]
+                text = f"{person} nimmt an {thema} teil"
+                if not var:  # keine Mitgliedschaft: die Zuweisung ist unmöglich
+                    self._pflicht(self.cp.NewConstant(0), 1, text)
+                    continue
+                lit = self.cp.NewBoolVar("") if self._mit_annahmen else None
+                c = self.cp.Add(sum(var) >= 1)
+                if lit is not None:
+                    c.OnlyEnforceIf(lit)
+                    self.annahmen.append((lit, "fixierung", text))
 
     def _pflicht(self, var, wert: int, text: str) -> None:
         lit = self.cp.NewBoolVar("") if self._mit_annahmen else None
@@ -249,7 +281,7 @@ class CpSatPlaner:
             r.pruefe_parameter(e.parameter)
 
         warnungen = [f"{p} hat keine Verfügbarkeit" for p, s in modell.verfuegbarkeit.items() if not s]
-        ctx = self._baue(modell, regeln, mit_annahmen=False, fixierungen=fixierungen)
+        ctx = self._baue(modell, regeln, False, fixierungen, optionen.max_termine_je_thema)
         # Das Zeitlimit gilt für den gesamten Aufruf, nicht nur für die Suche
         rest = max(1.0, optionen.zeitlimit_s - (time.perf_counter() - start))
         solver = self._solver(replace(optionen, zeitlimit_s=rest))
@@ -276,12 +308,15 @@ class CpSatPlaner:
         return plan
 
     # ── intern ───────────────────────────────────────────────────────────────
-    def _baue(self, modell, regeln, mit_annahmen: bool, fixierungen=None) -> _CpSatKontext:
-        ctx = _CpSatKontext(modell, mit_annahmen, fixierungen)
+    def _baue(
+        self, modell, regeln, mit_annahmen: bool, fixierungen=None, max_termine: int = MAX_TERMINE_JE_THEMA
+    ) -> _CpSatKontext:
+        ctx = _CpSatKontext(modell, mit_annahmen, fixierungen, max_termine)
         for e, r in regeln:
             ctx.setze_regel(e.name, e.typ, e.gewicht)
             r.anwenden(ctx, e.parameter)
         ctx.fixiere()
+        ctx._fixiere_konferenzen()
         ctx.schliesse()
         return ctx
 
@@ -336,7 +371,7 @@ class CpSatPlaner:
             gruende.append(
                 f"Regel themenabdeckung: Thema {name} (Dauer {t.dauer_min} min) passt in keinen Zeitblock"
             )
-        ctx = self._baue(modell, regeln, mit_annahmen=True, fixierungen=fixierungen)
+        ctx = self._baue(modell, regeln, True, fixierungen, optionen.max_termine_je_thema)
         solver = self._solver(optionen)
         if solver.Solve(ctx.cp) == cp_model.INFEASIBLE:
             kern = set(solver.SufficientAssumptionsForInfeasibility())

@@ -8,6 +8,12 @@ from typing import Any
 Termin = tuple[str, int]  # (Konferenz, Index in `Thema.festtermine`)
 
 
+def _namen(daten: Any) -> tuple[str, ...]:
+    if isinstance(daten, list):
+        return tuple(dict.fromkeys(n for n in daten if isinstance(n, str) and n))
+    return ()
+
+
 def _termine(daten: Any) -> frozenset[Termin]:
     ergebnis = set()
     if isinstance(daten, list):
@@ -29,15 +35,17 @@ class LehrerAenderung:
     konferenzen: tuple[str, ...] | None = None
     nicht_verfuegbar: frozenset[Termin] = frozenset()
     fest: frozenset[Termin] = frozenset()
+    zuweisung: tuple[str, ...] = ()  # Konferenzen, an denen die Lehrkraft fest teilnimmt (SPEC-0012 FR-09)
 
     def leer(self) -> bool:
-        return self.konferenzen is None and not self.nicht_verfuegbar and not self.fest
+        return self.konferenzen is None and not self.nicht_verfuegbar and not self.fest and not self.zuweisung
 
     def als_dict(self) -> dict[str, Any]:
         return {
             "konferenzen": list(self.konferenzen) if self.konferenzen is not None else None,
             "nicht_verfuegbar": sorted([k, j] for k, j in self.nicht_verfuegbar),
             "fest": sorted([k, j] for k, j in self.fest),
+            "zuweisung": list(self.zuweisung),
         }
 
     @classmethod
@@ -50,6 +58,7 @@ class LehrerAenderung:
             tuple(dict.fromkeys(konf)) if ok else None,
             _termine(daten.get("nicht_verfuegbar")),
             _termine(daten.get("fest")),
+            _namen(daten.get("zuweisung")),
         )
 
 

@@ -98,5 +98,7 @@ class ErgebnisSeite(QWidget):
         if plan.status == "kein_plan":
             details = [*plan.begruendung[:3]]
         farbe = {"optimal": DUNKEL.ok, "machbar": DUNKEL.konflikt, "kein_plan": DUNKEL.fehler}[plan.status]
-        self.status.setText(f"<b style='color:{farbe}'>{text}</b> – " + "; ".join(details))
+        tipp = self.sitzung.tipp(plan)
+        zusatz = f"<br><span style='color:{DUNKEL.hinweis}'>{tipp}</span>" if tipp else ""
+        self.status.setText(f"<b style='color:{farbe}'>{text}</b> – " + "; ".join(details) + zusatz)
         self.exportieren.setEnabled(True)

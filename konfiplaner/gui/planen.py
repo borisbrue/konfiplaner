@@ -153,7 +153,8 @@ class PlanenSeite(QWidget):
             "machbar": "nicht optimal (Zeitlimit oder Abbruch)",
             "kein_plan": "kein Plan möglich",
         }[plan.status]
-        self.stand.setText(f"Fertig: {len(plan.termine)} Termine, {zusatz}")
+        tipp = self.sitzung.tipp(plan)
+        self.stand.setText(f"Fertig: {len(plan.termine)} Termine, {zusatz}" + (f"\n{tipp}" if tipp else ""))
         self.plan_fertig.emit(plan)
 
     def _fehler(self, text: str) -> None:

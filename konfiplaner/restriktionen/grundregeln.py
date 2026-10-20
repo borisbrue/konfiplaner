@@ -9,6 +9,7 @@ from konfiplaner.restriktionen.kontext import Planungskontext
 
 STANDARD_REGISTRY = Registry()
 RANGFAKTOREN = (100, 10, 1)  # Konferenz I, II, III und weitere (SPEC-0008 FR-05)
+AUSGLEICH_FAKTOR = 150  # je Person Abweichung von der Zielgröße; mehr als der Rang-Unterschied I/II (90)
 
 
 def restriktion(klasse):
@@ -124,6 +125,66 @@ class Vorsitz(Restriktion):
 
 
 @restriktion
+class Verteilung(Restriktion):
+    """Jede Lehrkraft mit Konferenz nimmt an mindestens einer teil; der Rest verteilt sich (SPEC-0012)."""
+
+    name = "verteilung"
+    beschreibung = "Jede Lehrkraft nimmt an mindestens einer ihrer Konferenzen teil."
+    standard_typ = "aus"
+
+    def anwenden(self, ctx: Planungskontext, werte: dict[str, Any]) -> None:
+        for p in ctx.modell.personen:
+            konferenzen = ctx.modell.themen_von(p.name)
+            if not konferenzen:
+                continue
+            terme = [(1, ctx.teilnahme(p.name, t, j)) for t in konferenzen for j in ctx.termine(t)]
+            ctx.bedingung(terme, 1, None, f"{p.name} nimmt an keiner ihrer Konferenzen teil")
+
+
+@restriktion
+class Rangfolge(Restriktion):
+    """Vorliebe für die erste, dann die zweite Konferenz; keine Verstoßmeldungen (SPEC-0012 FR-03)."""
+
+    name = "rangfolge"
+    beschreibung = "Lehrkräfte besuchen bevorzugt ihre erste Konferenz, dann die zweite."
+    standard_typ = "aus"
+    erlaubte_typen = ("weich", "aus")
+
+    def anwenden(self, ctx: Planungskontext, werte: dict[str, Any]) -> None:
+        for p in ctx.modell.personen:
+            for rang, t in enumerate(p.themen):
+                faktor = RANGFAKTOREN[min(rang, len(RANGFAKTOREN) - 1)]
+                # Kosten = faktor * (1 - besucht): die Konstante entfällt, besucht senkt die Kosten
+                terme = [(-faktor, ctx.teilnahme(p.name, t, j)) for j in ctx.termine(t)]
+                ctx.strafe(terme, f"{p.name} besucht {t} nicht")
+
+
+@restriktion
+class Ausgleich(Restriktion):
+    """Konferenzen möglichst gleich groß (SPEC-0012 FR-04)."""
+
+    name = "ausgleich"
+    beschreibung = "Die Konferenzen sollen möglichst gleich viele Teilnehmende haben."
+    standard_typ = "aus"
+    erlaubte_typen = ("weich", "aus")
+
+    def anwenden(self, ctx: Planungskontext, werte: dict[str, Any]) -> None:
+        modell = ctx.modell
+        mit_konferenz = sum(1 for p in modell.personen if modell.themen_von(p.name))
+        konferenzen = [t for t in modell.themen if modell.personen_zu(t.name)]
+        if not mit_konferenz or not konferenzen:
+            return
+        ziel = max(1, round(mit_konferenz / len(konferenzen)))
+        for t in konferenzen:
+            terme = [
+                (1, ctx.teilnahme(p.name, t.name, j))
+                for p in modell.personen_zu(t.name)
+                for j in ctx.termine(t.name)
+            ]
+            ctx.abweichung(terme, ziel, f"{t.name} weicht von {ziel} Teilnehmenden ab", AUSGLEICH_FAKTOR)
+
+
+@restriktion
 class Wichtigkeit(Restriktion):
     """Wichtige Themen bekommen früher liegende Slots (Strafe = Wichtigkeit × Slot-Index)."""
 
@@ -147,5 +208,8 @@ GRUNDREGELN = (
     "keine_ueberschneidung",
     "verfuegbarkeit",
     "vorsitz",
+    "verteilung",
+    "rangfolge",
+    "ausgleich",
     "wichtigkeit",
 )

@@ -408,6 +408,8 @@ def test_gui_plant_gleichzeitige_konferenzen_und_zeigt_konflikte(qtbot, tmp_path
         qtbot, tmp_path, ("Deutsch", "Mi", "14:00", "15:00"), ("Sport", "Mi", "14:00", "15:00")
     )
     f.datei_oeffnen()
+    f.sitzung.setze_profil("festtermine")  # Verstöße bei Überschneidung (SPEC-0008)
+    f.regeln.aktualisieren()
     plane_und_warte(qtbot, f)
     hinweise = f.ergebnis.modelle["Hinweise"].zeilen()
     assert ["Verstoß", "schwerpunkte: Anna Eins nimmt nicht an Schwerpunkt Sport teil"] in hinweise

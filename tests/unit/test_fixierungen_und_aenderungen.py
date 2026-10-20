@@ -373,7 +373,7 @@ def test_teilneuplanung_unloesbar_laesst_plan_und_markierung(tmp_path):
     s.setze_nicht_verfuegbar("Ben Zwei", {("Sport", 0)})
     plan = s.teil_neu_planen()
     assert plan.status == "kein_plan" and s.plan is alt and s.markiert == ["Ben Zwei"]
-    assert "Sport" in " ".join(plan.begruendung)
+    assert "Ben Zwei" in " ".join(plan.begruendung)
 
 
 def test_vorsitzwechsel_bei_teilneuplanung(tmp_path):

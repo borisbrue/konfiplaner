@@ -37,6 +37,25 @@ log = logging.getLogger(__name__)
 THEMENWERTE = ("wichtigkeit", "mindestanzahl", "dauer_min")
 # Voreinstellung bei Dateien mit Konferenzterminen (SPEC-0008 FR-06): gleichzeitige Konferenzen sind erwartet
 PROFIL_FESTTERMINE = {"schwerpunkte": ("weich", 1.0)}
+# Standard für Lehrerlisten (SPEC-0012): jede Lehrkraft nimmt an mindestens einer ihrer Konferenzen teil,
+# Vorliebe nach Rangfolge, möglichst gleich große Konferenzen; „alle besuchen" ist aus
+PROFIL_VERTEILEN = {
+    "schwerpunkte": ("aus", 1.0),
+    "verteilung": ("hart", 1.0),
+    "rangfolge": ("weich", 1.0),
+    "ausgleich": ("weich", 1.0),
+}
+PROFILE = {"verteilen": PROFIL_VERTEILEN, "festtermine": PROFIL_FESTTERMINE, "klassisch": {}}
+PROFIL_NAMEN = {
+    "auto": "Automatisch (Lehrerliste: Verteilen)",
+    "verteilen": "Verteilen: mindestens eine Konferenz, Rest nach Rangfolge und Ausgleich",
+    "festtermine": "Rangfolge bei gleichzeitigen Terminen",
+    "klassisch": "Klassisch: alle Konferenzen besuchen",
+}
+TIPP_SCHWERPUNKTE = (
+    "Tipp: Die Regel „schwerpunkte“ verlangt, dass jede Lehrkraft alle ihre Konferenzen besucht. "
+    "Unter „Regeln“ das Profil „Verteilen“ wählen oder die Regel auf „weich“ stellen."
+)
 STANDARD_ZEITLIMIT_S = 60.0
 STANDARD_ZEITRASTER = {"tage": "Samstag", "beginn": "09:00", "ende": "12:00", "laenge_min": 45}
 
@@ -108,6 +127,7 @@ class Sitzung:
         self.zuordnung = Zuordnung()  # manuelle Änderungen (SPEC-0010)
         self._gespeicherte_zuordnung = Zuordnung()
         self._gesetzt: set[str] = set()  # von Hand gesetzte Regeln (verdrängen das Profil)
+        self.profil = "auto"  # auto | verteilen | festtermine | klassisch (SPEC-0012)
         self._themenwerte: dict[str, dict[str, int]] = {}
         self._lade_einstellungen()
 
@@ -130,6 +150,8 @@ class Sitzung:
         if isinstance(daten.get("letzter_exportordner"), str):
             self.letzter_exportordner = Path(daten["letzter_exportordner"])
         self._gespeicherte_zuordnung = Zuordnung.aus_dict(daten.get("zuordnung"))
+        if daten.get("profil") in ("auto", *PROFILE):
+            self.profil = daten["profil"]
         ab = daten.get("abgewaehlte_konferenzen")
         if isinstance(ab, list):
             self.abgewaehlt = {str(n) for n in ab}
@@ -165,6 +187,7 @@ class Sitzung:
                 "letzter_exportordner": str(self.letzter_exportordner) if self.letzter_exportordner else None,
                 "normalisierung": self.normalisierung.bestaetigt(),
                 "abgewaehlte_konferenzen": sorted(self.abgewaehlt),
+                "profil": self.profil,
                 "zuordnung": self.zuordnung.als_dict()
                 if self.datei
                 else self._gespeicherte_zuordnung.als_dict(),
@@ -207,15 +230,33 @@ class Sitzung:
         self.zuordnung.datei = str(pfad)
         self._gespeicherte_zuordnung = Zuordnung()
 
+    def wirksames_profil(self) -> str:
+        """Gewähltes Profil; bei „auto“ folgt es der Datei (SPEC-0012 FR-01)."""
+        if self.profil in PROFILE:
+            return self.profil
+        erg = self.ergebnis
+        if erg is not None and erg.lehrerliste:
+            return "verteilen"
+        return "festtermine" if erg is not None and erg.festtermine else "klassisch"
+
+    def setze_profil(self, profil: str) -> None:
+        if profil != "auto" and profil not in PROFILE:
+            raise ModellFehler(f"Unbekanntes Profil {profil}")
+        self.profil = profil
+        self._wende_profil()
+        self.plan = self.plan_modell = None
+        self.speichere()
+
     def _wende_profil(self) -> None:
-        """Regeln, die niemand von Hand gesetzt hat, folgen der Datei (Festtermine -> weiche Schwerpunkte)."""
-        fest = self.ergebnis is not None and self.ergebnis.festtermine
+        """Regeln, die niemand von Hand gesetzt hat, folgen dem Profil (SPEC-0008 FR-06, SPEC-0012 FR-01)."""
+        gewaehlt = PROFILE[self.wirksames_profil()]
         standard = self._basiskonfiguration()
-        for name, (typ, gewicht) in PROFIL_FESTTERMINE.items():
+        for name in {n for p in PROFILE.values() for n in p}:
             if name in self._gesetzt or name not in standard.einstellungen:
                 continue
+            typ_gewicht = gewaehlt.get(name)
             self.konfiguration.einstellungen[name] = (
-                RegelEinstellung(name, typ, gewicht) if fest else standard.einstellungen[name]
+                RegelEinstellung(name, *typ_gewicht) if typ_gewicht else standard.einstellungen[name]
             )
 
     def neu_laden(self) -> Importergebnis:
@@ -415,6 +456,29 @@ class Sitzung:
             a.nicht_verfuegbar = frozenset(termine)
             self._markiere(person)
 
+    def setze_zuweisung(self, person: str, konferenzen: set[str]) -> None:
+        """Weist die Lehrkraft fest Konferenzen zu: sie nimmt an mindestens einem Termin teil (SPEC-0012 FR-09)."""
+        self._person(person)
+        namen = {self._konferenz(k).name for k in konferenzen}
+        a = self.zuordnung.aenderung(person)
+        if tuple(sorted(namen)) != tuple(sorted(a.zuweisung)):
+            a.zuweisung = tuple(sorted(namen))
+            self._markiere(person)
+
+    def tipp(self, plan: Plan | None = None) -> str | None:
+        """Hinweis, wie sich ein fehlender Plan beheben lässt (SPEC-0012 FR-08)."""
+        plan = plan or self.plan
+        if plan is None or plan.status != "kein_plan":
+            return None
+        harte = self.konfiguration.einstellungen.get("schwerpunkte")
+        if (
+            harte is not None
+            and harte.typ == "hart"
+            and any("Regel schwerpunkte" in g for g in plan.begruendung)
+        ):
+            return TIPP_SCHWERPUNKTE
+        return None
+
     def setze_fest(self, person: str, termine: set[Termin]) -> None:
         """Gibt die Teilnahme an Konferenzterminen fest vor (SPEC-0010 FR-05)."""
         self._person(person)
@@ -522,7 +586,12 @@ class Sitzung:
                 bloecke = modell.fest_bloecke(konferenz) if konferenz in namen else []
                 if j < len(bloecke) and name in {p.name for p in modell.personen}:
                     teilnahmen.setdefault(name, {})[konferenz, bloecke[j][0]] = True
-        fix = Fixierungen(teilnahmen, termine)
+        zuweisungen = {
+            name: tuple(k for k in a.zuweisung if k in namen)
+            for name, a in self.zuordnung.personen.items()
+            if a.zuweisung and name in {p.name for p in modell.personen}
+        }
+        fix = Fixierungen(teilnahmen, termine, {n: k for n, k in zuweisungen.items() if k})
         return None if fix.leer() else fix
 
     def _ergaenze_warnungen(self, plan: Plan) -> None:
@@ -555,7 +624,11 @@ class Sitzung:
         plan = self.planer.planen(
             modell,
             self.konfiguration,
-            PlanerOptionen(zeitlimit_s=self.zeitlimit_s),
+            PlanerOptionen(
+                zeitlimit_s=self.zeitlimit_s,
+                # Lehrerlisten im Profil „Verteilen“: eine Konferenz ist ein Treffen (SPEC-0012 FR-06)
+                max_termine_je_thema=1 if self.wirksames_profil() == "verteilen" else 3,
+            ),
             fortschritt,
             abbruch,
             **zusatz,
