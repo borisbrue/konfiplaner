@@ -4,7 +4,16 @@ from __future__ import annotations
 
 from PySide6.QtCore import QPointF, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen
-from PySide6.QtWidgets import QAbstractButton, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QAbstractButton,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 from konfiplaner.gui.design import DUNKEL, Tokens
 
@@ -17,7 +26,8 @@ class SchrittKnopf(QAbstractButton):
     def __init__(self, nummer: int, titel: str, t: Tokens = DUNKEL) -> None:
         super().__init__()
         self.nummer, self.titel, self.status, self.zustand, self.t = nummer, titel, "", OFFEN, t
-        self._tastaturfokus = False  # Fokusring nur bei Tastaturbedienung, nicht nach einem Mausklick
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setAccessibleName(f"Schritt {nummer}: {titel}")
@@ -33,6 +43,9 @@ class SchrittKnopf(QAbstractButton):
 
     def sizeHint(self) -> QSize:
         return QSize(236, 54)
+
+    def minimumSizeHint(self) -> QSize:
+        return QSize(236, 42)  # in kleinen Fenstern rücken die Schritte zusammen (z. B. bei der Update-Karte)
 
     def paintEvent(self, _event) -> None:
         t, p = self.t, QPainter(self)
@@ -135,6 +148,8 @@ class SchrittKnopf(QAbstractButton):
 
 class Seitenleiste(QWidget):
     gewaehlt = Signal(int)
+    update_ansehen = Signal()
+    update_spaeter = Signal()
 
     def __init__(self, titel: list[str], t: Tokens = DUNKEL) -> None:
         super().__init__()
@@ -155,6 +170,38 @@ class Seitenleiste(QWidget):
             f"font-size: {t.klein}px; color: {t.gedaempft}; padding: 10px 20px 14px 20px;"
         )
         self.datei.setWordWrap(True)
+        self.version = QLabel("")
+        self.version.setStyleSheet(
+            f"font-size: {t.klein}px; color: {t.gedaempft}; padding: 0 20px 12px 20px;"
+        )
+        self.update_text = QLabel("")
+        self.update_text.setStyleSheet(f"font-weight: 600; color: {t.kreide};")
+        self.update_text.setWordWrap(True)
+        self.ansehen = QPushButton("Ansehen")
+        self.ansehen.setProperty("primaer", True)
+        self.ansehen.setAccessibleName("Neue Version ansehen")
+        self.spaeter = QPushButton("Später")
+        self.spaeter.setAccessibleName("Hinweis auf neue Version ausblenden")
+        self.ansehen.clicked.connect(self.update_ansehen)
+        self.spaeter.clicked.connect(self.update_spaeter)
+        self.update_karte = QFrame()
+        self.update_karte.setObjectName("updatekarte")
+        self.update_karte.setStyleSheet(
+            f"QFrame#updatekarte {{ background: {t.flaeche}; border: 1px solid {t.akzent}; border-radius: 10px; }}"
+        )
+        karte = QVBoxLayout(self.update_karte)
+        karte.setContentsMargins(12, 10, 12, 10)
+        karte.setSpacing(8)
+        karte.addWidget(self.update_text)
+        knoepfe = QHBoxLayout()
+        knoepfe.setSpacing(8)
+        knoepfe.addWidget(self.ansehen)
+        knoepfe.addWidget(self.spaeter)
+        karte.addLayout(knoepfe)
+        self.update_karte.setVisible(False)
+        karten_huelle = QVBoxLayout()
+        karten_huelle.setContentsMargins(12, 0, 12, 0)
+        karten_huelle.addWidget(self.update_karte)
         self.schritte = [SchrittKnopf(i + 1, name, t) for i, name in enumerate(titel)]
         wurzel = QVBoxLayout(self)
         wurzel.setContentsMargins(0, 22, 0, 0)
@@ -165,10 +212,20 @@ class Seitenleiste(QWidget):
             s.clicked.connect(lambda _c=False, i=i: self.gewaehlt.emit(i))
             wurzel.addWidget(s)
         wurzel.addStretch(1)
+        wurzel.addLayout(karten_huelle)
         wurzel.addWidget(self.datei)
+        wurzel.addWidget(self.version)
 
     def setze_schritt(self, i: int, status: str, zustand: str) -> None:
         self.schritte[i].setze(status, zustand)
 
     def setze_datei(self, text: str) -> None:
         self.datei.setText(text)
+
+    def setze_version(self, text: str) -> None:
+        self.version.setText(text)
+
+    def zeige_update(self, version: str | None) -> None:
+        """Zeigt die Hinweiskarte „Version X verfügbar“ oder blendet sie aus (SPEC-0015 FR-04)."""
+        self.update_text.setText(f"Version {version} verfügbar" if version else "")
+        self.update_karte.setVisible(bool(version))

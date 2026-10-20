@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from PySide6.QtCore import QUrl
+from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QWidget
 
 
@@ -56,6 +58,9 @@ class Dialoge:
             self.eltern, "Logo wählen", str(start or Path.home()), "Bilder (*.png *.jpg *.jpeg)"
         )
         return Path(pfad) if pfad else None
+
+    def url_oeffnen(self, url: str) -> None:
+        QDesktopServices.openUrl(QUrl(url))
 
     def ja_nein(self, titel: str, text: str) -> bool:
         antwort = QMessageBox.question(self.eltern, titel, text)

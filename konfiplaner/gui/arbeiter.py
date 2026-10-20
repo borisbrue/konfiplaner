@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import threading
 
-from PySide6.QtCore import QObject, QThread, Signal, Slot
+from PySide6.QtCore import QObject, Qt, QThread, Signal, Slot
 
 from konfiplaner.anwendung import Sitzung
 from konfiplaner.modell import ModellFehler
 from konfiplaner.planer import Fortschritt
 from konfiplaner.restriktionen import KonfigurationsFehler
+from konfiplaner.update import UpdateFehler, UpdateQuelle, suche_update
 
 
 class PlanungsArbeiter(QObject):
@@ -57,4 +58,36 @@ class PlanungsLauf:
         self.arbeiter.abbruch.set()
 
     def warte(self, ms: int = 5000) -> bool:
+        return self.thread.wait(ms)
+
+
+class UpdateLauf(QObject):
+    """Fragt die neueste Version im Hintergrund ab; ein Fehler meldet sich nur per Signal (SPEC-0015 FR-02)."""
+
+    fertig = Signal(object)  # UpdateInfo | None
+    fehler = Signal(str)
+
+    def __init__(self, quelle: UpdateQuelle, eigene: str) -> None:
+        super().__init__()
+        self._quelle, self._eigene = quelle, eigene
+        self.thread = QThread()
+        self.moveToThread(self.thread)
+        self.thread.started.connect(self._lauf)
+        # direkt: QThread lebt im Hauptthread, der beim Schließen auf das Ende wartet (sonst Verklemmung)
+        self.fertig.connect(self.thread.quit, Qt.ConnectionType.DirectConnection)
+        self.fehler.connect(self.thread.quit, Qt.ConnectionType.DirectConnection)
+
+    def start(self) -> None:
+        self.thread.start()
+
+    @Slot()
+    def _lauf(self) -> None:
+        try:
+            self.fertig.emit(suche_update(self._quelle, self._eigene))
+        except UpdateFehler as e:
+            self.fehler.emit(str(e))
+        except Exception as e:  # noqa: BLE001 – der Thread darf nie still sterben
+            self.fehler.emit(f"Unerwarteter Fehler: {e}")
+
+    def warte(self, ms: int = 6000) -> bool:
         return self.thread.wait(ms)

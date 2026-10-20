@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import QEvent
@@ -11,6 +13,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QTabWidget, QVBo
 from konfiplaner.anwendung import Sitzung
 from konfiplaner.excel_export import ExportFehler, ZielDateiExistiertFehler
 from konfiplaner.excel_import import ImportDateiFehler
+from konfiplaner.gui.arbeiter import UpdateLauf
 from konfiplaner.gui.daten import DatenSeite
 from konfiplaner.gui.design import registriere_fachfarben
 from konfiplaner.gui.dialoge import Dialoge
@@ -22,6 +25,9 @@ from konfiplaner.gui.planen import PlanenSeite
 from konfiplaner.gui.regeln import RegelnSeite
 from konfiplaner.gui.seitenleiste import AKTUELL, FERTIG, GESPERRT, OFFEN, Seitenleiste
 from konfiplaner.modell import Plan
+from konfiplaner.update import GitHubQuelle, UpdateInfo, UpdateQuelle, eigene_version
+
+log = logging.getLogger(__name__)
 
 (
     SEITE_DATEN,
@@ -68,9 +74,21 @@ class Seitenstapel(QTabWidget):
 
 
 class Hauptfenster(QMainWindow):
-    def __init__(self, sitzung: Sitzung, dialoge: Dialoge | None = None, auto_laden: bool = True) -> None:
+    def __init__(
+        self,
+        sitzung: Sitzung,
+        dialoge: Dialoge | None = None,
+        auto_laden: bool = True,
+        update_quelle: UpdateQuelle | None = None,
+        auto_update: bool = False,
+    ) -> None:
         super().__init__()
         self.sitzung = sitzung
+        self.update_quelle = update_quelle
+        self._update: UpdateInfo | None = None
+        self._update_lauf: UpdateLauf | None = None
+        self._update_manuell = False
+        self._jetzt = datetime.now
         self.dialoge = dialoge or Dialoge(self)
         self._gemeldete_aenderung: float | None = None
         self.setWindowTitle("KonfiPlaner")
@@ -100,6 +118,9 @@ class Hauptfenster(QMainWindow):
             self.reiter.addTab(seite, kurz)
 
         self.leiste = Seitenleiste([k for k, _, _ in SCHRITTE])
+        self.leiste.setze_version(f"Version {eigene_version()}")
+        self.leiste.update_ansehen.connect(self._update_ansehen)
+        self.leiste.update_spaeter.connect(self._update_spaeter)
         self.leiste.gewaehlt.connect(self._waehle_seite)
         self.seitentitel = QLabel("")
         self.seitentitel.setObjectName("seitentitel")
@@ -157,6 +178,8 @@ class Hauptfenster(QMainWindow):
 
         if auto_laden and sitzung.datei and sitzung.datei.exists():
             self._lade(sitzung.datei, still=True)
+        if auto_update and sitzung.update_faellig(self._jetzt()):
+            self.suche_update(manuell=False)
 
     def _menue(self) -> None:
         datei = self.menuBar().addMenu("&Datei")
@@ -166,7 +189,11 @@ class Hauptfenster(QMainWindow):
         self.aktion_export.triggered.connect(self.exportieren)
         ende = QAction("&Beenden", self, shortcut=QKeySequence.StandardKey.Quit)
         ende.triggered.connect(self.close)
+        self.aktion_update = QAction("Nach &Updates suchen…", self)
+        self.aktion_update.triggered.connect(lambda: self.suche_update(manuell=True))
         datei.addActions([self.aktion_oeffnen, self.aktion_export])
+        datei.addSeparator()
+        datei.addAction(self.aktion_update)
         datei.addSeparator()
         datei.addAction(ende)
 
@@ -429,7 +456,57 @@ class Hauptfenster(QMainWindow):
         event.acceptProposedAction()
         self._lade(excel)
 
+    # ── Update-Hinweis (SPEC-0015) ───────────────────────────────────────────
+    def suche_update(self, manuell: bool) -> None:
+        if self._update_lauf is not None:
+            return  # eine Abfrage läuft schon
+        self._update_manuell = manuell
+        if manuell:
+            self.sitzung.blende_update_aus(None)  # eine ausgeblendete Version wieder zeigen
+            self.statusBar().showMessage("Suche nach Updates …")
+        lauf = UpdateLauf(self.update_quelle or GitHubQuelle(), eigene_version())
+        lauf.fertig.connect(self._update_gefunden)
+        lauf.fehler.connect(self._update_fehler)
+        self._update_lauf = lauf
+        lauf.start()
+
+    def _update_beendet(self) -> None:
+        lauf, self._update_lauf = self._update_lauf, None
+        if lauf is not None:
+            lauf.warte()
+            lauf.deleteLater()
+
+    def _update_gefunden(self, info: UpdateInfo | None) -> None:
+        self._update_beendet()
+        self.sitzung.markiere_update_geprueft(self._jetzt())
+        self._update = info
+        ausgeblendet = info is not None and info.version == self.sitzung.ausgeblendete_version
+        self.leiste.zeige_update(info.version if info and not ausgeblendet else None)
+        if self._update_manuell:
+            self.statusBar().showMessage(
+                f"Version {info.version} verfügbar" if info else f"KonfiPlaner {eigene_version()} ist aktuell"
+            )
+
+    def _update_fehler(self, meldung: str) -> None:
+        self._update_beendet()
+        log.info("Update-Prüfung fehlgeschlagen: %s", meldung)
+        if self._update_manuell:
+            self.statusBar().showMessage("Keine Verbindung: Update-Prüfung nicht möglich")
+
+    def _update_ansehen(self) -> None:
+        if self._update is not None:
+            self.dialoge.url_oeffnen(self._update.url)
+
+    def _update_spaeter(self) -> None:
+        if self._update is not None:
+            self.sitzung.blende_update_aus(self._update.version)
+        self.leiste.zeige_update(None)
+
     def closeEvent(self, event) -> None:
+        if self._update_lauf is not None:
+            self._update_lauf.fertig.disconnect(self._update_gefunden)
+            self._update_lauf.fehler.disconnect(self._update_fehler)
+            self._update_lauf.warte()
         self.planen.beende()
         self.sitzung.speichere()
         super().closeEvent(event)

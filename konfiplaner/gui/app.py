@@ -37,7 +37,7 @@ def main() -> int:
         STANDARD_REGISTRY.lade_entry_points()
     except RegistrierungsFehler:
         log.warning("Plugin-Restriktionen konnten nicht geladen werden", exc_info=True)
-    fenster = Hauptfenster(Sitzung(YamlEinstellungen()))
+    fenster = Hauptfenster(Sitzung(YamlEinstellungen()), auto_update=True)
     fenster.show()
     return app.exec()
 

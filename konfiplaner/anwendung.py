@@ -11,7 +11,7 @@ import logging
 from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import time
+from datetime import datetime, time, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -186,6 +186,9 @@ class Sitzung:
         self.profil = "auto"  # auto | verteilen | festtermine | klassisch (SPEC-0012)
         self.tagesplan = Tagesplan()  # Ablauf des Tages für die Einladung (SPEC-0014)
         self.logo: Path | None = None
+        self.update_pruefung = True  # Update-Hinweis beim Start (SPEC-0015)
+        self.letzte_updatepruefung: datetime | None = None
+        self.ausgeblendete_version: str | None = None
         self._rueckgaengig: list[tuple[Plan, Plan, str, LehrerAenderung | None, frozenset[str]]] = []
         self._themenwerte: dict[str, dict[str, int]] = {}
         self._lade_einstellungen()
@@ -214,6 +217,14 @@ class Sitzung:
         self.tagesplan = Tagesplan.aus_dict(daten.get("tagesplan"))
         if isinstance(daten.get("logo"), str):
             self.logo = Path(daten["logo"])
+        if isinstance(daten.get("update_pruefung"), bool):
+            self.update_pruefung = daten["update_pruefung"]
+        if isinstance(daten.get("ausgeblendete_version"), str):
+            self.ausgeblendete_version = daten["ausgeblendete_version"]
+        try:
+            self.letzte_updatepruefung = datetime.fromisoformat(daten["letzte_updatepruefung"])
+        except (KeyError, TypeError, ValueError):
+            self.letzte_updatepruefung = None
         ab = daten.get("abgewaehlte_konferenzen")
         if isinstance(ab, list):
             self.abgewaehlt = {str(n) for n in ab}
@@ -252,6 +263,11 @@ class Sitzung:
                 "profil": self.profil,
                 "tagesplan": self.tagesplan.als_dict(),
                 "logo": str(self.logo) if self.logo else None,
+                "update_pruefung": self.update_pruefung,
+                "ausgeblendete_version": self.ausgeblendete_version,
+                "letzte_updatepruefung": self.letzte_updatepruefung.isoformat()
+                if self.letzte_updatepruefung
+                else None,
                 "zuordnung": self.zuordnung.als_dict()
                 if self.datei
                 else self._gespeicherte_zuordnung.als_dict(),
@@ -999,6 +1015,21 @@ class Sitzung:
     def exportiere_einladung(self, ziel: str | Path, ueberschreiben: bool = False) -> None:
         exportiere_einladung(self.tagesplan, self.ausgewaehlte_konferenzen(), ziel, ueberschreiben, self.logo)
         self.letzter_exportordner = Path(ziel).parent
+        self.speichere()
+
+    # ── Update-Hinweis (SPEC-0015) ──────────────────────────────────────────
+    def update_faellig(self, jetzt: datetime) -> bool:
+        """Der Start-Check läuft höchstens einmal in 24 Stunden und nur, wenn er nicht abgeschaltet ist."""
+        if not self.update_pruefung:
+            return False
+        return self.letzte_updatepruefung is None or jetzt - self.letzte_updatepruefung >= timedelta(hours=24)
+
+    def markiere_update_geprueft(self, jetzt: datetime) -> None:
+        self.letzte_updatepruefung = jetzt
+        self.speichere()
+
+    def blende_update_aus(self, version: str | None) -> None:
+        self.ausgeblendete_version = version
         self.speichere()
 
 

@@ -5,9 +5,9 @@ title: "Versionsvergleich und Update-Prüfung"
 level: unit            # unit | integration | contract | acceptance | performance | property
 spec: SPEC-0015
 contract: CON-0020
-status: planned            # planned | implemented | passing | failing | skipped
-framework: ""              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
-artifact: "tests/<level>/<name>.test.<ext>"
+status: passing            # planned | implemented | passing | failing | skipped
+framework: "pytest"              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
+artifact: "tests/unit/test_versionsvergleich_und_update_pruefung.py"
 tags: []
 ---
 

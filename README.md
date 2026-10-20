@@ -58,3 +58,7 @@ Die App wird per GitHub Actions gebaut (Workflow „macOS-App“, Apple Silicon)
 ## Einladung als Word-Dokument
 
 Im Schritt „Einladung“ lässt sich der Ablauf des Tages (Kopf, Ziele, Zeitblöcke) bearbeiten und als `.docx` exportieren. Ein Block mit „Gewählte Fachkonferenzen automatisch eintragen“ übernimmt die Auswahl aus dem Schritt „Konferenzen“. Ein Logo (PNG/JPG) wählst du pro Rechner; es liegt nicht im Repository.
+
+## Update-Hinweis
+
+Beim Start fragt die App höchstens einmal am Tag das neueste Release bei GitHub ab (anonym, nur Programmname und Version) und zeigt unten in der Seitenleiste einen Hinweis, wenn es eine neuere Version gibt. „Datei → Nach Updates suchen…“ prüft sofort. Abschalten: `update_pruefung: false` in `~/.config/konfiplaner/einstellungen.yaml`. Versionen werden in `pyproject.toml` gesetzt; ein Release bekommt den Tag `vX.Y.Z`.

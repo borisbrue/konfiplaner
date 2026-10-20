@@ -5,9 +5,9 @@ title: "Update-Hinweis Verhalten"
 level: acceptance            # unit | integration | contract | acceptance | performance | property
 spec: SPEC-0015
 contract: CON-0020
-status: planned            # planned | implemented | passing | failing | skipped
-framework: ""              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
-artifact: "tests/<level>/<name>.test.<ext>"
+status: passing            # planned | implemented | passing | failing | skipped
+framework: "pytest-qt"              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
+artifact: "tests/gui/test_gui_update_hinweis.py"
 tags: []
 ---
 

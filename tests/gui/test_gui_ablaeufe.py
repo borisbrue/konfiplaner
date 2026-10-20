@@ -41,6 +41,9 @@ class FakeDialoge:
     def einladung_ziel(self, start):
         return self.ziel
 
+    def url_oeffnen(self, url):
+        self.urls = [*getattr(self, "urls", []), url]
+
     def logo_oeffnen(self, start):
         return getattr(self, "logo", None)
 
