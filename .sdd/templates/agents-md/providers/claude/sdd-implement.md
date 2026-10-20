@@ -251,9 +251,11 @@ Python (pytest):
 # tests/unit/test_connection_monitor.py
 from sdd_cli.hub.connection_monitor import ConnectionMonitor
 
+
 def test_initial_state_unknown():
     m = ConnectionMonitor()
     assert m.state == "unknown"
+
 
 def test_two_failures_trigger_offline():
     m = ConnectionMonitor()

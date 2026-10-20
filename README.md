@@ -50,3 +50,7 @@ Mindestanzahl). Ablauf in der Oberfläche:
 Eine Restriktion ist eine Klasse mit eindeutigem Namen (`konfiplaner.restriktionen.Restriktion`), registriert per
 Dekorator `@restriktion` oder über den Entry-Point `konfiplaner.restriktionen`. Alle Regeln, auch die
 Grundregeln, lassen sich je Lauf als hart, weich oder aus konfigurieren (GUI-Reiter „Regeln" oder YAML).
+
+## macOS-App
+
+Die App wird per GitHub Actions gebaut (Workflow „macOS-App“, Apple Silicon): Actions → macOS-App → Run workflow, danach `KonfiPlaner-macos.zip` aus den Artefakten laden. Die App ist nicht notarisiert; auf einem fremden Mac beim ersten Start Rechtsklick → Öffnen (oder `xattr -dr com.apple.quarantine KonfiPlaner.app`).
