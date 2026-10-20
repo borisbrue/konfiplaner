@@ -16,7 +16,9 @@ from konfiplaner.restriktionen.kontext import Planungskontext
 
 TYPEN = ("hart", "weich", "aus")
 ENTRY_POINT_GRUPPE = "konfiplaner.restriktionen"
-SCHEMA_PFAD = Path(__file__).resolve().parent / "regel-konfiguration.schema.json"  # liegt im Paket, damit es mitgebaut wird
+SCHEMA_PFAD = (
+    Path(__file__).resolve().parent / "regel-konfiguration.schema.json"
+)  # liegt im Paket, damit es mitgebaut wird
 
 
 class RegistrierungsFehler(ValueError):
