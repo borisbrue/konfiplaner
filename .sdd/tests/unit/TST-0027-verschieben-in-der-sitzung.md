@@ -5,9 +5,9 @@ title: "Verschieben in der Sitzung"
 level: unit            # unit | integration | contract | acceptance | performance | property
 spec: SPEC-0013
 contract: CON-0018
-status: planned            # planned | implemented | passing | failing | skipped
-framework: ""              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
-artifact: "tests/<level>/<name>.test.<ext>"
+status: passing            # planned | implemented | passing | failing | skipped
+framework: "pytest"              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
+artifact: "tests/unit/test_verschieben_in_der_sitzung.py"
 tags: []
 ---
 

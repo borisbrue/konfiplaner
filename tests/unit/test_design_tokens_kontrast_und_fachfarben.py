@@ -26,6 +26,16 @@ from konfiplaner.gui.design import (
 FLAECHEN = ("tafel", "eingabe", "flaeche", "zebra", "erhoeht")
 
 
+@pytest.fixture(autouse=True)
+def darstellung_zuruecksetzen(qapp):
+    """`installiere` verändert die gemeinsame QApplication; andere Tests sollen sie unverändert vorfinden."""
+    palette, schrift = qapp.palette(), qapp.font()
+    yield
+    qapp.setStyleSheet("")
+    qapp.setPalette(palette)
+    qapp.setFont(schrift)
+
+
 # ── Tokens ──────────────────────────────────────────────────────────────────
 def test_alle_farben_sind_gueltige_hexwerte():
     for name, wert in vars(DUNKEL).items():

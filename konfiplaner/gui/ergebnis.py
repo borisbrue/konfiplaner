@@ -5,8 +5,9 @@ from __future__ import annotations
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QTableView, QTabWidget, QVBoxLayout, QWidget
 
-from konfiplaner.anwendung import Sitzung
+from konfiplaner.anwendung import MANUELL, Sitzung
 from konfiplaner.excel_export import SPALTEN
+from konfiplaner.gui.brett import Brett
 from konfiplaner.gui.daten import _tabelle
 from konfiplaner.gui.design import DUNKEL
 from konfiplaner.gui.fachfarben import fachfarben_anwenden
@@ -44,6 +45,8 @@ def _faerbe_hinweis(zeile: list):
 
 class ErgebnisSeite(QWidget):
     export_gewuenscht = Signal()
+    plan_geaendert = Signal()  # nach einer Verschiebung auf dem Brett
+    hinweis = Signal(str)
 
     def __init__(self, sitzung: Sitzung) -> None:
         super().__init__()
@@ -63,7 +66,11 @@ class ErgebnisSeite(QWidget):
         self.tabellen: dict[str, QTableView] = {n: _tabelle(m, REITER[n]) for n, m in self.modelle.items()}
         for name, spalte in (("Termine", 3), ("Personen", 4), ("Themen", 0)):
             fachfarben_anwenden(self.tabellen[name], {spalte: ", "})
+        self.brett = Brett(sitzung)
+        self.brett.geaendert.connect(self._brett_geaendert)
+        self.brett.hinweis.connect(self.hinweis)
         self.reiter = QTabWidget()
+        self.reiter.addTab(self.brett, "Verteilung")
         for name, tabelle in self.tabellen.items():
             self.reiter.addTab(tabelle, REITER[name])
         kopf = QHBoxLayout()
@@ -73,7 +80,15 @@ class ErgebnisSeite(QWidget):
         wurzel.addLayout(kopf)
         wurzel.addWidget(self.reiter, 1)
 
+    def _brett_geaendert(self) -> None:
+        self._zeige_tabellen()
+        self.plan_geaendert.emit()
+
     def aktualisieren(self) -> None:
+        self.brett.aktualisieren()
+        self._zeige_tabellen()
+
+    def _zeige_tabellen(self) -> None:
         plan = self.sitzung.plan
         if plan is None:
             self.status.setText("Noch kein Plan")
@@ -85,6 +100,7 @@ class ErgebnisSeite(QWidget):
             self.modelle[name].setze(zeilen)
         for tabelle in self.tabellen.values():
             tabelle.resizeColumnsToContents()
+        manuell = MANUELL in plan.warnungen
         text = {
             "optimal": "Plan ist optimal",
             "machbar": "Plan ist gültig, aber nicht als optimal bewiesen",
@@ -98,6 +114,8 @@ class ErgebnisSeite(QWidget):
         if plan.status == "kein_plan":
             details = [*plan.begruendung[:3]]
         farbe = {"optimal": DUNKEL.ok, "machbar": DUNKEL.konflikt, "kein_plan": DUNKEL.fehler}[plan.status]
+        if manuell and plan.status != "kein_plan":
+            text, farbe = "Plan ist von Hand angepasst", DUNKEL.hinweis
         tipp = self.sitzung.tipp(plan)
         zusatz = f"<br><span style='color:{DUNKEL.hinweis}'>{tipp}</span>" if tipp else ""
         self.status.setText(f"<b style='color:{farbe}'>{text}</b> – " + "; ".join(details) + zusatz)

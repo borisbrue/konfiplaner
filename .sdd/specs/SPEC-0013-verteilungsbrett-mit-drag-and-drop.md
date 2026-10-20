@@ -2,7 +2,7 @@
 id: SPEC-0013
 title: "Verteilungsbrett mit Drag and Drop"
 type: feature           # feature | bug-fix
-status: approved           # draft | review | approved | implemented | deprecated
+status: implemented           # draft | review | approved | implemented | deprecated
 owner: "Boris Brünen"
 created: 2026-10-20
 updated: 2026-10-20

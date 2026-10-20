@@ -127,6 +127,8 @@ class Hauptfenster(QMainWindow):
         self.planen.plan_fertig.connect(self._plan_fertig)
         self.planen.laeuft_geaendert.connect(self._laeuft_geaendert)
         self.ergebnis.export_gewuenscht.connect(self.exportieren)
+        self.ergebnis.plan_geaendert.connect(self._brett_geaendert)
+        self.ergebnis.hinweis.connect(self._hinweis)
         self._aktualisiere_zustand()
 
         if auto_laden and sitzung.datei and sitzung.datei.exists():
@@ -246,6 +248,11 @@ class Hauptfenster(QMainWindow):
         self.ergebnis.aktualisieren()
         self._aktualisiere_zustand()
 
+    def _brett_geaendert(self) -> None:
+        """Nach einer Verschiebung auf dem Brett: Seitenleiste und Lehrkräfte folgen dem Plan."""
+        self.lehrkraefte.aktualisieren()
+        self._aktualisiere_zustand()
+
     def _zuordnung_geaendert(self) -> None:
         self.konferenzen.aktualisieren()
         self._aktualisiere_zustand()
@@ -263,6 +270,7 @@ class Hauptfenster(QMainWindow):
     def _plan_fertig(self, plan: Plan) -> None:
         self.lehrkraefte.aktualisieren()
         self.ergebnis.aktualisieren()
+        self.ergebnis.reiter.setCurrentIndex(0)  # das Verteilungsbrett ist der Einstieg
         self._aktualisiere_zustand()
         self.reiter.setCurrentIndex(SEITE_ERGEBNIS)
         self.statusBar().showMessage(

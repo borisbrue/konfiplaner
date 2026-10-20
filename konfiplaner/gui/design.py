@@ -322,6 +322,16 @@ QMenu::item {{ padding: 7px 22px; border-radius: {t.radius_klein}px; }}
 QMenu::item:selected {{ background: {t.erhoeht_hover}; }}
 QMenu::separator {{ height: 1px; background: {t.linie}; margin: 6px 4px; }}
 QToolTip {{ background: {t.erhoeht}; color: {t.kreide}; border: 1px solid {t.linie_stark}; padding: 6px 8px; }}
+QFrame#spalte {{ background: {t.flaeche}; border: 1px solid {t.linie}; border-radius: 12px; }}
+QFrame#spalte[ziel="imset"] {{ border: 2px solid {t.akzent}; }}
+QFrame#spalte[ziel="ausnahme"] {{ border: 2px dashed {t.konflikt}; }}
+QFrame#spalte QLabel {{ border: none; }}
+QLabel#spaltentitel {{ font-size: {t.mittel}px; font-weight: 700; }}
+QLabel#ausnahmehinweis {{ color: {t.konflikt}; font-weight: 600; }}
+QLabel[klein="true"] {{ color: {t.fehler}; font-weight: 600; }}
+QListWidget#karten {{ background: transparent; border: none; border-radius: 0; }}
+QListWidget#karten::item {{ background: transparent; border: none; padding: 0; }}
+QListWidget#karten::item:selected {{ background: transparent; }}
 QWidget#zellenhuelle {{ background: transparent; }}
 QDialogButtonBox QPushButton {{ min-width: 84px; }}
 QMessageBox {{ background: {t.tafel}; }}
